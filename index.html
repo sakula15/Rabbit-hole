@@ -537,6 +537,7 @@ function renderMd(raw){
   t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
   t=t.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,'<em>$1</em>');
   t=t.replace(/~~(.+?)~~/g,'<s>$1</s>');
+  t=t.replace(/(^|\n)(\*{3,}|-{3,})/g,'$1'+ph('<hr style="border:none;border-top:1px solid #eee4dc;margin:8px 0">'));
   t=t.replace(/(^|\n)#{3} (.+)/g,'$1<strong style="font-size:13px">$2</strong>');
   t=t.replace(/(^|\n)#{2} (.+)/g,'$1<strong style="font-size:14px">$2</strong>');
   t=t.replace(/(^|\n)# (.+)/g,'$1<strong style="font-size:15px">$2</strong>');
