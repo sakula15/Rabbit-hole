@@ -59,6 +59,17 @@ body{
 }
 .msg.user .bubble{background:var(--me);color:var(--me-text);border-radius:16px 16px 4px 16px;}
 .msg.ai .bubble{background:var(--ai);color:var(--ai-text);border:1px solid var(--line);border-radius:16px 16px 16px 4px;box-shadow:0 1px 4px rgba(0,0,0,.03);}
+.bubble pre.md-pre{background:#f8f0f4;border:1px solid #eee4dc;border-radius:8px;padding:8px 10px;margin:4px 0;overflow-x:auto;font-size:11.5px;line-height:1.6;}
+.bubble pre.md-pre code{font-family:'Courier New',Consolas,monospace;color:#5a4038;background:none;padding:0;}
+.bubble code.md-code{background:#f5ece6;border-radius:4px;padding:1px 5px;font-size:12px;font-family:'Courier New',Consolas,monospace;color:#a06478;}
+.bubble a.md-link{color:var(--accent);text-decoration:underline;word-break:break-all;}
+.bubble ul.md-ul,.bubble ol.md-ol{margin:4px 0 4px 18px;padding:0;}
+.bubble li{margin:2px 0;}
+.bubble blockquote.md-bq{border-left:3px solid #e8c4d2;margin:4px 0;padding:2px 10px;color:#8a6a5c;}
+.bubble table.md-tbl{border-collapse:collapse;margin:6px 0;font-size:12px;width:100%;overflow-x:auto;display:block;}
+.bubble .md-tbl th,.bubble .md-tbl td{border:1px solid #eee4dc;padding:4px 8px;text-align:left;}
+.bubble .md-tbl th{background:#f8f0f4;color:#5a4038;font-weight:600;}
+.bubble .md-tbl td{background:var(--card);}
 .bubble img.att{max-width:160px;max-height:160px;border-radius:10px;display:block;margin:4px 0;}
 .bubble .filechip{
   display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,.05);
@@ -517,6 +528,38 @@ function fmtTime(ts){
   const hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   return (d.toDateString()===n.toDateString())?hm:(d.getMonth()+1)+'/'+d.getDate()+' '+hm;
 }
+function renderMd(raw){
+  if(!raw)return '';
+  var safe=[],ph=function(html){safe.push(html);return '\x01'+(safe.length-1)+'\x01';};
+  var t=raw.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  t=t.replace(/```(\w*)\n?([\s\S]*?)```/g,function(_,l,c){return ph('<pre class="md-pre"><code>'+c.trimEnd()+'</code></pre>');});
+  t=t.replace(/`([^`\n]+)`/g,function(_,c){return ph('<code class="md-code">'+c+'</code>');});
+  t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g,'<em>$1</em>');
+  t=t.replace(/~~(.+?)~~/g,'<s>$1</s>');
+  t=t.replace(/(^|\n)&gt; (.+)/g,'$1<blockquote class="md-bq">$2</blockquote>');
+  t=t.replace(/(^|\n)- (.+)/g,'$1<li>$2</li>');
+  t=t.replace(/((?:<li>.*<\/li>\n?)+)/g,'<ul class="md-ul">$1</ul>');
+  t=t.replace(/(^|\n)(\d+)\. (.+)/g,'$1<li>$2. $3</li>');
+  t=t.replace(/((?:(?:^|\n)\|.+\|[ ]*)+)/g,function(_,block){
+    var rows=block.trim().split('\n').filter(function(r){return r.trim();});
+    if(rows.length<2)return block;
+    var html='<table class="md-tbl">';
+    rows.forEach(function(row,ri){
+      if(ri===1&&/^\|[\s\-:|]+\|$/.test(row.trim()))return;
+      var tag=ri===0?'th':'td';
+      var cells=row.replace(/^\||\|$/g,'').split('|');
+      html+='<tr>';
+      cells.forEach(function(c){html+='<'+tag+'>'+c.trim()+'</'+tag+'>';});
+      html+='</tr>';
+    });
+    html+='</table>';
+    return ph(html);
+  });;
+  t=t.replace(/https?:\/\/[^\s<\x01]+/g,function(u){return ph('<a class="md-link" href="'+u+'" target="_blank" rel="noopener">'+u+'</a >');});
+  t=t.replace(/\x01(\d+)\x01/g,function(_,i){return safe[i];});
+  return t;
+}
 function extractThink(m){
   if(!m.content)return;
   const match=m.content.match(/<think>([\s\S]*?)<\/think>/);
@@ -569,7 +612,7 @@ function buildMsgNode(m,i){
     const chip=document.createElement('span');chip.className='filechip';chip.textContent='📄 '+f.name;
     b.appendChild(chip);b.appendChild(document.createElement('br'));
   });
-  const txt=document.createElement('span');txt.className='txt';txt.textContent=m.content||'';
+  const txt=document.createElement('span');txt.className='txt';txt.innerHTML=renderMd(m.content||'');
   b.appendChild(txt);
   b.onclick=()=>{if(streaming)return;wrap.classList.toggle('show-actions');};
   row.appendChild(b);wrap.appendChild(row);
@@ -708,7 +751,7 @@ function buildPayloadUpTo(i,mem){
   let sys=c.system?c.system.trim():'';
   if(c.members.length>1){
     const names=c.members.map(x=>x.name||x.model).join('、');
-    sys+=(sys?'\n\n':'')+'你是「'+(mem.name||mem.model)+'」，正在参与一个多人讨论，成员有：'+names+'。其他成员的发言会以 [名字]: 开头标注。请以自己的身份自然参与讨论，不要在回复开头加自己的名字标签。';
+    sys+=(sys?'\n\n':'')+'你是「'+(mem.name||mem.model)+'」，正在参与一个多人对话，成员有：'+names+'。其他成员的发言会以 [名字]: 开头标注。请以自己的身份自然参与对话，不要在回复开头加自己的名字标签。';
   }
   if(sys)out.push({role:'system',content:sys});
   const hist=msgs.slice(0,i);
