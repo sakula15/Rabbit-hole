@@ -6,7 +6,7 @@
 <title>Rabbit hole</title>
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#faf7f4">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -575,6 +575,13 @@ function buildMsgNode(m,i){
   row.appendChild(b);wrap.appendChild(row);
 
   const act=document.createElement('div');act.className='actions';
+  const bc=document.createElement('button');bc.textContent='📋 复制';
+  bc.onclick=()=>{
+    const t=m.content||'';
+    if(navigator.clipboard){navigator.clipboard.writeText(t).then(()=>toast('已复制 ✓')).catch(()=>toast('复制失败'));}
+    else{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('已复制 ✓');}
+  };
+  act.appendChild(bc);
   const be=document.createElement('button');be.textContent='✏️ 编辑';
   be.onclick=()=>{if(streaming)return;editIdx=i;render();};
   act.appendChild(be);
@@ -583,6 +590,15 @@ function buildMsgNode(m,i){
     br.onclick=()=>{if(streaming)return;regen(i);};
     act.appendChild(br);
   }
+  const bk=document.createElement('button');bk.textContent='↩️ 回溯';
+  bk.onclick=async()=>{
+    if(streaming)return;
+    const after=msgs.length-i-1;
+    if(after<=0){toast('后面没有消息了');return;}
+    if(!confirm('删除这条之后的 '+after+' 条消息？'))return;
+    msgs.splice(i+1);await saveMsgs();render();toast('已回溯 ✓');
+  };
+  act.appendChild(bk);
   const bd=document.createElement('button');bd.className='warn';bd.textContent='🗑 删除';
   bd.onclick=async()=>{if(streaming)return;msgs.splice(i,1);await saveMsgs();render();};
   act.appendChild(bd);
@@ -609,6 +625,26 @@ function buildEditNode(m,i){
   const save=document.createElement('button');save.className='edit-save';save.textContent='保存';
   save.onclick=async()=>{m.content=ta.value;editIdx=null;await saveMsgs();render();toast('已保存 ✓');};
   btns.appendChild(cancel);btns.appendChild(save);
+  if(m.role==='user'){
+    const resend=document.createElement('button');resend.className='edit-save';resend.textContent='保存并重发';
+    resend.onclick=async()=>{
+      if(streaming)return;
+      m.content=ta.value;m.ts=Date.now();editIdx=null;
+      msgs.splice(i+1);
+      await saveMsgs();render();
+      const c=getConv();
+      if(c.mode==='round'){
+        for(const mem of c.members){
+          if(stopChain)break;
+          const idx=pushAiMsg(mem);
+          await saveMsgs();render();
+          await runGeneration(idx,mem);
+        }
+        stopChain=false;
+      }
+    };
+    btns.appendChild(resend);
+  }
   box.appendChild(ta);box.appendChild(btns);wrap.appendChild(box);
   setTimeout(()=>{ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);},50);
   return wrap;
