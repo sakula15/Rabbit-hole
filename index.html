@@ -1080,22 +1080,22 @@ async function updateStorageBox(){
 }
 $('btnPersist').onclick=async()=>{
   const btn=$('btnPersist');
-  const box=$('storageBox');
   btn.textContent='⏳ 申请中…';
   try{
     if(!navigator.storage||!navigator.storage.persist){
-      box.innerHTML+='<br>❌ 此浏览器不支持持久化API（如iOS Safari），但数据依然正常保存';
+      toast('❌ 此浏览器不支持持久化API');
       btn.textContent='🔒 申请持久化保护';
       return;
     }
     const ok=await navigator.storage.persist();
-    box.innerHTML+= ok
-      ? '<br>✓ 申请成功，数据已受保护'
-      : '<br>⚠ 浏览器拒绝了申请（不弹窗直接拒是正常行为，安装为PWA或多用几天后成功率更高），数据依然正常保存';
+    if(ok){
+      toast('✓ 申请成功，数据已受保护');
+    }else{
+      toast('⚠ 浏览器拒绝了申请，但数据依然正常保存');
+    }
     btn.textContent='🔒 申请持久化保护';
-    updateStorageBox();
   }catch(e){
-    box.innerHTML+='<br>❌ 申请出错：'+(e.message||e);
+    toast('❌ 申请出错：'+(e.message||e));
     btn.textContent='🔒 申请持久化保护';
   }
 };
