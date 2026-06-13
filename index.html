@@ -668,6 +668,10 @@ function buildEditNode(m,i){
   wrap.className='msg-wrap '+(m.role==='user'?'user':'ai');
   const box=document.createElement('div');box.className='edit-box';
   const ta=document.createElement('textarea');ta.value=m.content||'';
+  ta.style.minHeight='80px';
+  ta.style.maxHeight='50vh';
+  setTimeout(()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,window.innerHeight*0.5)+'px';},10);
+  ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,window.innerHeight*0.5)+'px';});
   const btns=document.createElement('div');btns.className='edit-btns';
   const cancel=document.createElement('button');cancel.className='edit-cancel';cancel.textContent='取消';
   cancel.onclick=()=>{editIdx=null;render();};
