@@ -1109,6 +1109,55 @@ document.querySelectorAll('.tb-cell').forEach(cell=>{
   cell.onclick=()=>showTool(cell.dataset.tool);
 });
 
+/* ══════════ 聊天记录搜索 ══════════ */
+let searchTimer=null;
+$('searchInput').addEventListener('input',function(){
+  clearTimeout(searchTimer);
+  const q=this.value.trim();
+  if(!q){$('searchResults').innerHTML='<div class="tb-empty">输入关键词开始搜索</div>';return;}
+  searchTimer=setTimeout(()=>doSearch(q),300);
+});
+function doSearch(q){
+  const box=$('searchResults');
+  const lower=q.toLowerCase();
+  const hits=[];
+  msgs.forEach((m,i)=>{
+    if(!m.content)return;
+    const idx=m.content.toLowerCase().indexOf(lower);
+    if(idx===-1)return;
+    hits.push({i,m,idx});
+  });
+  if(!hits.length){box.innerHTML='<div class="tb-empty">没有找到「'+q+'」</div>';return;}
+  box.innerHTML='';
+  hits.forEach(h=>{
+    const div=document.createElement('div');div.className='tb-result';
+    const name=document.createElement('div');name.className='tb-r-name';
+    name.textContent=(h.m.role==='user'?'👤 你':'✦ '+(h.m.name||h.m.model||'AI'))+' · '+fmtTime(h.m.ts);
+    const text=document.createElement('div');text.className='tb-r-text';
+    const start=Math.max(0,h.idx-20);
+    const end=Math.min(h.m.content.length,h.idx+q.length+40);
+    const snippet=(start>0?'…':'')+h.m.content.slice(start,end)+(end<h.m.content.length?'…':'');
+    const esc=snippet.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+    text.innerHTML=esc.replace(re,'<mark>$1</mark>');
+    div.appendChild(name);div.appendChild(text);
+    div.onclick=()=>{
+      closeToolbar();
+      setTimeout(()=>{
+        const wraps=chatEl.querySelectorAll('.msg-wrap');
+        const target=wraps[h.i];
+        if(!target)return;
+        target.scrollIntoView({behavior:'smooth',block:'center'});
+        target.style.transition='background .3s';
+        target.style.background='#fce4ec';
+        setTimeout(()=>{target.style.background='';},1500);
+      },300);
+    };
+    box.appendChild(div);
+  });
+  box.insertAdjacentHTML('afterbegin','<div class="tb-empty" style="padding:10px;font-size:11px;">找到 '+hits.length+' 条结果</div>');
+}
+
 /* ══════════ 设置面板 ══════════ */
 document.querySelectorAll('.tabs button').forEach(btn=>{
   btn.onclick=()=>{
