@@ -427,6 +427,11 @@ $('impFile').onchange=async function(e){
       closeToolbar();
       toast('已导入 '+imported.length+' 条消息到新对话「'+fname+'」 ✓');
     }
+      var now=Date.now();
+      imported.forEach(function(m){if(!m.ts)m.ts=now;});
+      msgs=msgs.concat(imported);
+      await saveMsgs();render();
+      toast('已导入 '+imported.length+' 条消息 ✓');
     }else if(impMode==='full'){
       var backup=JSON.parse(text);
       if(!backup.version||!backup.convs){toast('不是有效的备份文件');return;}
