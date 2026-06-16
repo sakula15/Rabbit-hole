@@ -56,6 +56,9 @@
       <div class="tb-cell" data-tool="emoji">
         <span class="tb-icon">😺</span><span class="tb-label">表情</span>
       </div>
+      <div class="tb-cell" data-tool="backup">
+        <span class="tb-icon">📦</span><span class="tb-label">备份</span>
+      </div>
     </div>
   </div>
   <div class="tb-page" id="tool-search">
@@ -68,6 +71,31 @@
   </div>
   <div class="tb-page" id="tool-emoji">
     <div class="tb-empty">表情包库（待施工🚧）</div>
+  </div>
+  <div class="tb-page" id="tool-backup">
+    <div class="bk-section">
+      <h3 class="bk-title">📤 导出当前对话</h3>
+      <div class="bk-btns">
+        <button class="bk-btn" id="expTxt">导出 TXT（人读）</button>
+        <button class="bk-btn" id="expJsonl">导出 JSONL（数据）</button>
+      </div>
+    </div>
+    <div class="bk-section">
+      <h3 class="bk-title">📤 全量备份</h3>
+      <div class="bk-hint">导出所有对话 + 渠道配置，可用于恢复或搬家</div>
+      <div class="bk-btns">
+        <button class="bk-btn" id="expFull">导出完整备份</button>
+      </div>
+    </div>
+    <div class="bk-section">
+      <h3 class="bk-title">📥 导入</h3>
+      <div class="bk-hint">支持 JSONL（单对话）或完整备份（JSON）</div>
+      <div class="bk-btns">
+        <button class="bk-btn" id="impJsonl">导入 JSONL 到当前对话</button>
+        <button class="bk-btn" id="impFull">恢复完整备份</button>
+      </div>
+      <input type="file" id="impFile" accept=".jsonl,.json,.txt" style="display:none">
+    </div>
   </div>
 </div>
 

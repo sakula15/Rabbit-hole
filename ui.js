@@ -273,7 +273,7 @@ function showTool(name){
     currentTool=name;
     $('tool-'+name).classList.add('active');
     $('tbBack').classList.add('show');
-    $('tbTitle').textContent={search:'搜索',emoji:'表情'}[name]||'工具箱';
+    $('tbTitle').textContent={search:'搜索',emoji:'表情',backup:'备份'}[name]||'工具箱';
   }else{
     currentTool=null;
     $('tool-grid').classList.add('active');
@@ -336,6 +336,100 @@ function doSearch(q){
   });
   box.insertAdjacentHTML('afterbegin','<div class="tb-empty" style="padding:10px;font-size:11px;">找到 '+hits.length+' 条结果</div>');
 }
+
+/* ══════════ 导入导出 ══════════ */
+function downloadFile(name,content,type){
+  var blob=new Blob([content],{type:type||'text/plain;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=name;a.click();URL.revokeObjectURL(a.href);
+}
+$('expTxt').onclick=function(){
+  var c=getConv();if(!c)return;
+  var lines=[];
+  lines.push('# '+c.name);
+  lines.push('# 导出时间：'+new Date().toLocaleString());
+  lines.push('# 消息数：'+msgs.length);
+  lines.push('');
+  msgs.forEach(function(m){
+    var time=m.ts?new Date(m.ts).toLocaleString():'';
+    var who=m.role==='user'?'👤 你':'✦ '+(m.name||m.model||'AI');
+    lines.push('['+time+'] '+who);
+    if(m.content)lines.push(m.content);
+    if(m.images&&m.images.length)lines.push('[图片 x'+m.images.length+']');
+    if(m.files&&m.files.length)m.files.forEach(function(f){lines.push('[文件: '+f.name+']');});
+    lines.push('');
+  });
+  var fname=c.name.replace(/[^\w\u4e00-\u9fff]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.txt';
+  downloadFile(fname,lines.join('\n'));
+  toast('已导出 TXT ✓');
+};
+$('expJsonl').onclick=function(){
+  var c=getConv();if(!c)return;
+  var lines=msgs.map(function(m){return JSON.stringify(m);});
+  var fname=c.name.replace(/[^\w\u4e00-\u9fff]/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.jsonl';
+  downloadFile(fname,lines.join('\n'),'application/jsonl');
+  toast('已导出 JSONL ✓');
+};
+$('expFull').onclick=async function(){
+  var backup={
+    version:1,
+    exportedAt:new Date().toISOString(),
+    channels:channels,
+    convs:[]
+  };
+  for(var i=0;i<convs.length;i++){
+    var c=convs[i];
+    var m=await msgsGet(c.id);
+    backup.convs.push({meta:c,messages:m});
+  }
+  var fname='RabbitHole_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  downloadFile(fname,JSON.stringify(backup,null,2),'application/json');
+  toast('完整备份已导出 ✓');
+};
+var impMode=null;
+$('impJsonl').onclick=function(){impMode='jsonl';$('impFile').accept='.jsonl';$('impFile').click();};
+$('impFull').onclick=function(){impMode='full';$('impFile').accept='.json';$('impFile').click();};
+$('impFile').onchange=async function(e){
+  var file=e.target.files[0];if(!file)return;
+  e.target.value='';
+  try{
+    var text=await new Promise(function(r){var fr=new FileReader();fr.onload=function(){r(fr.result);};fr.readAsText(file);});
+    if(impMode==='jsonl'){
+      var lines=text.trim().split('\n').filter(Boolean);
+      var imported=[];
+      lines.forEach(function(line){
+        try{var m=JSON.parse(line);if(m.role)imported.push(m);}catch(e){}
+      });
+      if(!imported.length){toast('没有找到有效消息');return;}
+      if(!confirm('将 '+imported.length+' 条消息导入到当前对话？\n（追加到现有消息之后）'))return;
+      var now=Date.now();
+      imported.forEach(function(m){if(!m.ts)m.ts=now;});
+      msgs=msgs.concat(imported);
+      await saveMsgs();render();
+      toast('已导入 '+imported.length+' 条消息 ✓');
+    }else if(impMode==='full'){
+      var backup=JSON.parse(text);
+      if(!backup.version||!backup.convs){toast('不是有效的备份文件');return;}
+      if(!confirm('恢复备份将覆盖当前所有数据！\n包含 '+backup.convs.length+' 个对话、'+(backup.channels||[]).length+' 个渠道\n确定继续？'))return;
+      channels=backup.channels||[];
+      convs=[];
+      for(var i=0;i<backup.convs.length;i++){
+        var item=backup.convs[i];
+        convs.push(item.meta);
+        await msgsSet(item.meta.id,item.messages||[]);
+      }
+      if(!convs.length)convs.push({id:uid(),name:'对话1',system:'',ctx:20,temp:0.8,mode:'round',members:[],updatedAt:Date.now()});
+      activeId=convs[0].id;
+      msgs=await msgsGet(activeId);
+      await saveMeta();
+      render();renderMemberBar();updateTitle();
+      closeToolbar();
+      toast('备份恢复成功 ✓ （'+backup.convs.length+' 个对话）');
+    }
+  }catch(err){
+    toast('导入失败：'+(err.message||err));
+  }
+};
 
 /* ── 设置面板 ── */
 document.querySelectorAll('.tabs button').forEach(function(btn){
