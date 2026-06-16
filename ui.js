@@ -398,15 +398,35 @@ $('impFile').onchange=async function(e){
       var lines=text.trim().split('\n').filter(Boolean);
       var imported=[];
       lines.forEach(function(line){
-        try{var m=JSON.parse(line);if(m.role)imported.push(m);}catch(e){}
+        try{
+          var m=JSON.parse(line);
+          if(m.role){imported.push(m);}
+          else if(m.mes!==undefined){
+            var converted={
+              role:m.is_user?'user':'assistant',
+              content:m.mes||'',
+              name:m.name||'',
+              ts:m.send_date?new Date(m.send_date).getTime():Date.now()
+            };
+            if(!m.is_system&&converted.content)imported.push(converted);
+          }
+        }catch(e){}
       });
       if(!imported.length){toast('没有找到有效消息');return;}
-      if(!confirm('将 '+imported.length+' 条消息导入到当前对话？\n（追加到现有消息之后）'))return;
+      var fname=file.name.replace(/\.[^.]+$/,'');
+      if(!confirm('将 '+imported.length+' 条消息导入为新对话「'+fname+'」？'))return;
       var now=Date.now();
       imported.forEach(function(m){if(!m.ts)m.ts=now;});
-      msgs=msgs.concat(imported);
-      await saveMsgs();render();
-      toast('已导入 '+imported.length+' 条消息 ✓');
+      var newConv={id:uid(),name:fname,system:'',ctx:20,temp:0.8,mode:'round',members:[],updatedAt:now};
+      convs.push(newConv);
+      await msgsSet(newConv.id,imported);
+      activeId=newConv.id;
+      msgs=imported;
+      await saveMeta();
+      render();renderMemberBar();updateTitle();
+      closeToolbar();
+      toast('已导入 '+imported.length+' 条消息到新对话「'+fname+'」 ✓');
+    }
     }else if(impMode==='full'){
       var backup=JSON.parse(text);
       if(!backup.version||!backup.convs){toast('不是有效的备份文件');return;}
