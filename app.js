@@ -118,6 +118,20 @@ function buildPayloadUpTo(i,mem){
     var names=c.members.map(function(x){return x.name||x.model;}).join('、');
     sys+=(sys?'\n\n':'')+'你是「'+(mem.name||mem.model)+'」，正在参与一个多人对话，成员有：'+names+'。其他成员的发言会以 [名字]: 开头标注。请以自己的身份自然参与对话，不要在回复开头加自己的名字标签。';
   }
+  /* 表情包清单注入 */
+  if(stickers.length){
+    var cats={};
+    stickers.forEach(function(s){
+      var c=s.cat||'其他';
+      if(!cats[c])cats[c]=[];
+      cats[c].push(s.name+(s.desc?'('+s.desc+')':''));
+    });
+    var stkText='\n\n【表情包】用[表情:名字]发送。';
+    Object.keys(cats).forEach(function(cat){
+      stkText+='\n['+cat+'] 可用：'+cats[cat].join('|');
+    });
+    sys+=stkText;
+  }
   if(sys)out.push({role:'system',content:sys});
   var hist=msgs.slice(0,i);
   var slice=c.ctx>0?hist.slice(-c.ctx):hist.slice(-1);
