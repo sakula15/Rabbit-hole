@@ -7,11 +7,12 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch
 var db=null;
 function openDB(){
   return new Promise(function(resolve,reject){
-    var req=indexedDB.open('minichat',1);
+    var req=indexedDB.open('minichat',2);
     req.onupgradeneeded=function(e){
       var d=e.target.result;
       if(!d.objectStoreNames.contains('kv'))d.createObjectStore('kv');
       if(!d.objectStoreNames.contains('msgs'))d.createObjectStore('msgs');
+      if(!d.objectStoreNames.contains('stickers'))d.createObjectStore('stickers',{keyPath:'id'});
     };
     req.onsuccess=function(e){db=e.target.result;resolve();};
     req.onerror=function(e){reject(e.target.error);};
@@ -294,3 +295,25 @@ $('fileInput').onchange=async function(e){
   }
   e.target.value='';renderAttach();
 };
+
+/* ── 表情包 CRUD ── */
+var stickers=[];
+function stkLoad(){
+  return new Promise(function(res){
+    var tx=db.transaction('stickers');var store=tx.objectStore('stickers');var r=store.getAll();
+    r.onsuccess=function(){stickers=r.result||[];res();};
+    r.onerror=function(){stickers=[];res();};
+  });
+}
+function stkSave(item){
+  return new Promise(function(res,rej){
+    var r=db.transaction('stickers','readwrite').objectStore('stickers').put(item);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}
+function stkDel(id){
+  return new Promise(function(res,rej){
+    var r=db.transaction('stickers','readwrite').objectStore('stickers').delete(id);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}

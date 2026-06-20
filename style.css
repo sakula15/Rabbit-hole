@@ -139,7 +139,7 @@ details.think .tbody{
 }
 .inputbar{
   flex-shrink:0;display:flex;gap:6px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
-  background:var(--card);
+  background:var(--card);position:relative;
 }
 .attach-btn{
   flex-shrink:0;border:none;background:none;font-size:19px;cursor:pointer;
@@ -331,3 +331,57 @@ details.think .tbody{
   background:rgba(60,40,40,.85);color:#fff;font-size:12px;
   padding:8px 18px;border-radius:18px;z-index:99;display:none;max-width:80%;text-align:center;
 }
+
+/* ══ 表情包弹窗面板 ══ */
+.sticker-popup{
+  display:none;position:absolute;bottom:100%;left:0;right:0;
+  max-height:240px;overflow-y:auto;background:var(--card);
+  border-top:1px solid var(--line);padding:8px;z-index:20;
+  -webkit-overflow-scrolling:touch;
+}
+.sticker-popup.open{display:block;}
+.sticker-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+}
+.sticker-grid .stk-item{
+  cursor:pointer;border-radius:8px;overflow:hidden;
+  border:1px solid var(--line);background:var(--bg);
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  transition:transform .1s;
+}
+.sticker-grid .stk-item:active{transform:scale(.92);}
+.sticker-grid .stk-item img{width:100%;height:100%;object-fit:contain;}
+.sticker-grid .stk-empty{
+  grid-column:1/-1;text-align:center;color:#b89a8c;font-size:12px;padding:24px 0;
+}
+
+/* ══ 表情包管理页 ══ */
+.stk-mgr{padding:8px 0;}
+.stk-add-row{display:flex;gap:6px;margin-bottom:6px;}
+.stk-add-row input[type="text"]{
+  flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 10px;
+  font-size:12px;background:var(--bg);font-family:inherit;
+}
+.stk-add-row select{
+  border:1px solid var(--line);border-radius:8px;padding:6px 8px;
+  font-size:12px;background:var(--bg);flex:1;
+}
+.stk-preview{
+  text-align:center;margin:6px 0;min-height:0;
+}
+.stk-preview img{max-height:80px;max-width:120px;border-radius:6px;}
+.stk-mgr-card{
+  display:flex;align-items:center;gap:8px;padding:8px;
+  border-bottom:1px solid var(--line);
+}
+.stk-mgr-card img{width:48px;height:48px;object-fit:contain;border-radius:6px;background:var(--bg);}
+.stk-mgr-info{flex:1;min-width:0;}
+.stk-mgr-name{font-size:12px;font-weight:600;color:var(--fg);}
+.stk-mgr-desc{font-size:10px;color:#b89a8c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stk-mgr-cat{font-size:10px;color:#b89a8c;margin-top:2px;}
+.stk-mgr-del{
+  border:none;background:none;color:#c87;font-size:16px;cursor:pointer;padding:4px 8px;
+}
+
+/* ══ 气泡内表情包图片 ══ */
+.bubble .stk-img{max-width:150px;max-height:150px;border-radius:6px;vertical-align:middle;}

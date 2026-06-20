@@ -41,6 +41,7 @@ async function init(){
   }
   if(!activeId||!getConv())activeId=convs[0].id;
   msgs=await msgsGet(activeId);
+  await stkLoad();
   render();renderMemberBar();updateTitle();
 }
 
@@ -678,6 +679,112 @@ function renderAttach(){
 function autoGrow(){inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,110)+'px';}
 inputEl.addEventListener('input',autoGrow);
 sendBtn.onclick=send;
+
+/* ══ 表情包弹窗（输入栏上方） ══ */
+var stickerOpen=false;
+$('btnSticker').onclick=function(){
+  stickerOpen=!stickerOpen;
+  if(stickerOpen){renderStickerPopup();$('stickerPopup').classList.add('open');}
+  else{$('stickerPopup').classList.remove('open');}
+};
+function renderStickerPopup(){
+  var grid=$('stickerGrid');grid.innerHTML='';
+  if(!stickers.length){
+    grid.innerHTML='<div class="stk-empty">还没有表情包，去工具栏添加吧 😺</div>';
+    return;
+  }
+  /* 按分类排序：卖萌撒娇→抽象恶搞→其他 */
+  var order={'卖萌撒娇':0,'抽象恶搞':1,'其他':2};
+  var sorted=stickers.slice().sort(function(a,b){return (order[a.cat]||2)-(order[b.cat]||2);});
+  var lastCat='';
+  sorted.forEach(function(s){
+    if(s.cat!==lastCat){
+      lastCat=s.cat;
+      var label=document.createElement('div');
+      label.style.cssText='grid-column:1/-1;font-size:11px;color:#b89a8c;padding:4px 0 2px;';
+      label.textContent=s.cat;
+      grid.appendChild(label);
+    }
+    var cell=document.createElement('div');cell.className='stk-item';
+    var img=document.createElement('img');img.src=s.url;img.alt=s.name;img.title=s.name;
+    cell.appendChild(img);
+    cell.onclick=function(){
+      inputEl.value+='[表情:'+s.name+']';
+      autoGrow();
+      $('stickerPopup').classList.remove('open');
+      stickerOpen=false;
+    };
+    grid.appendChild(cell);
+  });
+}
+
+/* ══ 表情包管理页（工具栏） ══ */
+var stkTempUrl='';
+$('btnStkFile').onclick=function(){$('stkFileInput').click();};
+$('stkFileInput').onchange=function(e){
+  var file=e.target.files[0];if(!file)return;
+  if(file.size>2*1024*1024){toast('图片超过2MB');return;}
+  var fr=new FileReader();
+  fr.onload=function(){
+    stkTempUrl=fr.result;
+    $('stkPreview').innerHTML='<img src="'+stkTempUrl+'">';
+    $('stkUrl').value='';
+  };
+  fr.readAsDataURL(file);
+  e.target.value='';
+};
+$('stkUrl').addEventListener('input',function(){
+  if(this.value.trim()){
+    stkTempUrl=this.value.trim();
+    $('stkPreview').innerHTML='<img src="'+stkTempUrl+'" onerror="this.parentNode.innerHTML=\'预览失败\'">';
+  }else{
+    stkTempUrl='';$('stkPreview').innerHTML='';
+  }
+});
+$('btnStkAdd').onclick=async function(){
+  var name=$('stkName').value.trim();
+  var desc=$('stkDesc').value.trim();
+  var url=$('stkUrl').value.trim()||stkTempUrl;
+  var cat=$('stkCat').value;
+  if(!name){toast('名字不能为空');return;}
+  if(!url){toast('请粘贴图床URL或选择本地图片');return;}
+  if(stickers.find(function(s){return s.name===name;})){toast('名字重复了');return;}
+  var item={id:uid(),name:name,desc:desc,url:url,cat:cat};
+  stickers.push(item);
+  await stkSave(item);
+  $('stkName').value='';$('stkDesc').value='';$('stkUrl').value='';
+  stkTempUrl='';$('stkPreview').innerHTML='';
+  renderStkMgr();
+  toast('已添加「'+name+'」');
+};
+function renderStkMgr(){
+  var box=$('stkMgrList');box.innerHTML='';
+  if(!stickers.length){box.innerHTML='<div class="tb-empty">还没有表情包</div>';return;}
+  var order={'卖萌撒娇':0,'抽象恶搞':1,'其他':2};
+  var sorted=stickers.slice().sort(function(a,b){return (order[a.cat]||2)-(order[b.cat]||2);});
+  sorted.forEach(function(s){
+    var card=document.createElement('div');card.className='stk-mgr-card';
+    var img=document.createElement('img');img.src=s.url;
+    var info=document.createElement('div');info.className='stk-mgr-info';
+    var nm=document.createElement('div');nm.className='stk-mgr-name';nm.textContent=s.name;
+    var ds=document.createElement('div');ds.className='stk-mgr-desc';ds.textContent=s.desc||'(无描述)';
+    var ct=document.createElement('div');ct.className='stk-mgr-cat';ct.textContent=s.cat||'其他';
+    info.appendChild(nm);info.appendChild(ds);info.appendChild(ct);
+    var del=document.createElement('button');del.className='stk-mgr-del';del.textContent='×';
+    del.onclick=async function(){
+      stickers=stickers.filter(function(x){return x.id!==s.id;});
+      await stkDel(s.id);renderStkMgr();toast('已删除「'+s.name+'」');
+    };
+    card.appendChild(img);card.appendChild(info);card.appendChild(del);
+    box.appendChild(card);
+  });
+}
+/* 打开工具栏表情页时刷新管理列表 */
+var origShowTool=showTool;
+showTool=function(name){
+  origShowTool(name);
+  if(name==='emoji')renderStkMgr();
+};
 
 /* ── 启动 ── */
 init().catch(function(e){

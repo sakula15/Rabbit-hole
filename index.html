@@ -26,8 +26,13 @@
 <div class="member-bar" id="memberBar"></div>
 <div class="attach-bar" id="attachBar"></div>
 
+<div class="sticker-popup" id="stickerPopup">
+  <div class="sticker-grid" id="stickerGrid"></div>
+</div>
+
 <div class="inputbar">
   <button class="attach-btn" id="btnAttach">📎</button>
+  <button class="attach-btn" id="btnSticker">😺</button>
   <input type="file" id="fileInput" multiple accept="*/*" style="display:none">
   <textarea id="input" rows="1" placeholder="说点什么…"></textarea>
   <button class="send-btn" id="btnSend">➤</button>
@@ -70,7 +75,27 @@
     </div>
   </div>
   <div class="tb-page" id="tool-emoji">
-    <div class="tb-empty">表情包库（待施工🚧）</div>
+    <div class="stk-mgr">
+      <div class="stk-add-row">
+        <input type="text" id="stkName" placeholder="名字（必填）">
+        <input type="text" id="stkDesc" placeholder="描述（AI识别用）">
+      </div>
+      <div class="stk-add-row">
+        <input type="text" id="stkUrl" placeholder="图床URL（粘贴链接）">
+        <button class="bk-btn" id="btnStkFile">选图片</button>
+        <input type="file" id="stkFileInput" accept="image/*" style="display:none">
+      </div>
+      <div class="stk-add-row">
+        <select id="stkCat">
+          <option value="卖萌撒娇">卖萌撒娇</option>
+          <option value="抽象恶搞">抽象恶搞</option>
+          <option value="其他">其他</option>
+        </select>
+        <button class="btn-save" id="btnStkAdd">＋ 添加</button>
+      </div>
+      <div class="stk-preview" id="stkPreview"></div>
+      <div id="stkMgrList"></div>
+    </div>
   </div>
   <div class="tb-page" id="tool-backup">
     <div class="bk-section">

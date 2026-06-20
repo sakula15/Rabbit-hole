@@ -34,6 +34,13 @@ function renderMd(raw){
   t=t.replace(/((?:<li>.*<\/li>\n?)+)/g,'<ul class="md-ul">$1</ul>');
   t=t.replace(/(^|\n)(\d+)\. (.+)/g,'$1<li>$2. $3</li>');
   t=t.replace(/https?:\/\/[^\s<\x01]+/g,function(u){return ph('<a class="md-link" href="'+u+'" target="_blank" rel="noopener">'+u+'</a>');});
+  /* 表情包标签渲染 */
+  t=t.replace(/\[表情[:：]([^\]]+)\]/g,function(_,name){
+    var n=name.trim();
+    var s=(typeof stickers!=='undefined'?stickers:[]).find(function(x){return x.name===n;});
+    if(s)return ph('<img class="stk-img" src="'+s.url+'" alt="'+n+'" title="'+n+'">');
+    return _;
+  });
   t=t.replace(/\x01(\d+)\x01/g,function(_,i){return safe[i];});
   return t;
 }
