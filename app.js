@@ -126,7 +126,7 @@ function buildPayloadUpTo(i,mem){
       if(!cats[c])cats[c]=[];
       cats[c].push(s.name+(s.desc?'('+s.desc+')':''));
     });
-    var stkText='\n\n【表情包】用[表情:名字]发送。根据对话情景适当使用，不要过度频繁使用。';
+    var stkText='\n\n【表情包】用[表情:名字]+换行符发送。根据对话情景适当使用，不要过度频繁使用或每条回复都用。';
     Object.keys(cats).forEach(function(cat){
       stkText+='\n['+cat+'] 可用：'+cats[cat].join('|');
     });
