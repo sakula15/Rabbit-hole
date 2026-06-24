@@ -43,7 +43,32 @@
 
 <div class="page" id="page-roles">
   <div class="topbar"><h1>🎭 角色管理</h1></div>
-  <div class="page-placeholder">角色管理页面建设中…</div>
+  <div class="char-list" id="charList"></div>
+  <div class="char-add-bar">
+    <button class="btn-new-conv" id="btnNewChar">＋ 新建角色</button>
+  </div>
+  <!-- 角色编辑弹窗 -->
+  <div class="mask" id="maskChar"></div>
+  <div class="char-editor" id="charEditor">
+    <h2 id="charEditorTitle">新建角色</h2>
+    <div class="field">
+      <label>角色名称</label>
+      <input type="text" id="charName" placeholder="给角色起个名字">
+    </div>
+    <div class="field">
+      <label>头像（emoji）</label>
+      <input type="text" id="charAvatar" placeholder="🎭" maxlength="4">
+    </div>
+    <div class="field">
+      <label>角色人设</label>
+      <textarea id="charSystem" rows="12" placeholder="写角色的人设、性格、背景…"></textarea>
+    </div>
+    <div class="panel-btns">
+      <button class="btn-danger" id="btnCharDel" style="display:none;">删除</button>
+      <button class="btn-clear" id="btnCharCancel">取消</button>
+      <button class="btn-save" id="btnCharSave">保存</button>
+    </div>
+  </div>
 </div>
 <div class="page" id="page-rp">
   <div class="topbar"><h1>💬 角色聊天</h1></div>

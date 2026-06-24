@@ -7,12 +7,13 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch
 var db=null;
 function openDB(){
   return new Promise(function(resolve,reject){
-    var req=indexedDB.open('minichat',2);
+    var req=indexedDB.open('minichat',3);
     req.onupgradeneeded=function(e){
       var d=e.target.result;
       if(!d.objectStoreNames.contains('kv'))d.createObjectStore('kv');
       if(!d.objectStoreNames.contains('msgs'))d.createObjectStore('msgs');
       if(!d.objectStoreNames.contains('stickers'))d.createObjectStore('stickers',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('characters'))d.createObjectStore('characters',{keyPath:'id'});
     };
     req.onsuccess=function(e){db=e.target.result;resolve();};
     req.onerror=function(e){reject(e.target.error);};
@@ -328,6 +329,27 @@ function stkSave(item){
 function stkDel(id){
   return new Promise(function(res,rej){
     var r=db.transaction('stickers','readwrite').objectStore('stickers').delete(id);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}
+
+/*── 角色 CRUD ── */
+function charGetAll(){
+  return new Promise(function(res){
+    var tx=db.transaction('characters');var r=tx.objectStore('characters').getAll();
+    r.onsuccess=function(){res(r.result||[]);};
+    r.onerror=function(){res([]);};
+  });
+}
+function charSave(item){
+  return new Promise(function(res,rej){
+    var r=db.transaction('characters','readwrite').objectStore('characters').put(item);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}
+function charDel(id){
+  return new Promise(function(res,rej){
+    var r=db.transaction('characters','readwrite').objectStore('characters').delete(id);
     r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
   });
 }

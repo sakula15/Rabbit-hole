@@ -43,6 +43,7 @@ async function init(){
   msgs=await msgsGet(activeId);
   await stkLoad();
   render();renderMemberBar();updateTitle();
+  await renderCharList();
 }
 
 /* ── 标题 ── */
@@ -795,6 +796,72 @@ document.querySelectorAll('.bottom-tabs button').forEach(function(btn){
     document.getElementById('page-'+btn.dataset.page).classList.add('active');
   };
 });
+
+/* ══════════ 角色管理 ══════════ */
+var editingCharId=null;
+
+async function renderCharList(){
+  var list=await charGetAll();
+  var el=document.getElementById('charList');
+  if(!list.length){el.innerHTML='<div class="char-empty">还没有角色，点下面＋ 创建一个吧</div>';return;}
+  el.innerHTML='';
+  list.sort(function(a,b){return(b.updatedAt||0)-(a.updatedAt||0);});
+  list.forEach(function(ch){
+    var card=document.createElement('div');
+    card.className='char-card';
+    card.innerHTML='<div class="char-avatar">'+(ch.avatar||'🎭')+'</div>'+'<div class="char-info"><h3>'+ch.name+'</h3>'
+      +'<p>'+(ch.system||'(无人设)').slice(0,80)+'</p></div>';
+    card.onclick=function(){openCharEditor(ch);};
+    el.appendChild(card);
+  });
+}
+
+function openCharEditor(ch){
+  editingCharId=ch?ch.id:null;
+  document.getElementById('charEditorTitle').textContent=ch?'编辑角色':'新建角色';
+  document.getElementById('charName').value=ch?ch.name:'';
+  document.getElementById('charAvatar').value=ch?ch.avatar||'🎭':'🎭';
+  document.getElementById('charSystem').value=ch?ch.system||'':'';
+  document.getElementById('btnCharDel').style.display=ch?'':'none';
+  document.getElementById('maskChar').style.display='block';
+  document.getElementById('charEditor').classList.add('open');
+}
+
+function closeCharEditor(){
+  document.getElementById('maskChar').style.display='none';
+  document.getElementById('charEditor').classList.remove('open');
+  editingCharId=null;
+}
+
+document.getElementById('btnNewChar').onclick=function(){openCharEditor(null);};
+document.getElementById('maskChar').onclick=closeCharEditor;
+document.getElementById('btnCharCancel').onclick=closeCharEditor;
+
+document.getElementById('btnCharSave').onclick=async function(){
+  var name=document.getElementById('charName').value.trim();
+  if(!name){toast('名字不能为空');return;}
+  var item={
+    id:editingCharId||uid(),
+    name:name,
+    avatar:document.getElementById('charAvatar').value.trim()||'🎭',
+    system:document.getElementById('charSystem').value.trim(),
+    updatedAt:Date.now()
+  };
+  if(!editingCharId)item.createdAt=Date.now();
+  await charSave(item);
+  closeCharEditor();
+  await renderCharList();
+  toast('角色已保存');
+};
+
+document.getElementById('btnCharDel').onclick=async function(){
+  if(!editingCharId)return;
+  if(!confirm('确定删除这个角色？'))return;
+  await charDel(editingCharId);
+  closeCharEditor();
+  await renderCharList();
+  toast('角色已删除');
+};
 
 /* ── 启动 ── */
 init().catch(function(e){
