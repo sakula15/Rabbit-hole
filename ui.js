@@ -877,7 +877,7 @@ async function renderPersonaList(){
     var card=document.createElement('div');
     card.className='char-card';
     var displayName=p.label?p.label+'<span style="font-size:11px;color:var(--sub);margin-left:6px;">→ '+p.name+'</span>':p.name;
-    card.innerHTML='<div class="char-avatar">👤</div><div class="char-info"><h3>'+displayName+'</h3>'+'<p>'+(p.content||'(无内容)').slice(0,80)+'</p></div>';
+    card.innerHTML='<div class="char-avatar">'+(p.avatar||'👤')+'</div><div class="char-info"><h3>'+displayName+'</h3>'+'<p>'+(p.content||'(无内容)').slice(0,80)+'</p></div>';
     card.onclick=function(){openPersonaEditor(p);};
     el.appendChild(card);
   });
@@ -888,6 +888,7 @@ function openPersonaEditor(p){
   document.getElementById('personaEditorTitle').textContent=p?'编辑人设':'新建人设';
   document.getElementById('personaName').value=p?p.name:'';
   document.getElementById('personaLabel').value=p?p.label||'':'';
+  document.getElementById('personaAvatar').value=p?p.avatar||'👤':'👤';
   document.getElementById('personaContent').value=p?p.content||'':'';
   document.getElementById('btnPersonaDel').style.display=p?'':'none';
   document.getElementById('maskPersona').style.display='block';
@@ -911,6 +912,7 @@ document.getElementById('btnPersonaSave').onclick=async function(){
     id:editingPersonaId||uid(),
     name:name,
     label:document.getElementById('personaLabel').value.trim(),
+    avatar:document.getElementById('personaAvatar').value.trim()||'👤',
     content:document.getElementById('personaContent').value.trim(),
     updatedAt:Date.now()
   };
