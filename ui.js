@@ -786,6 +786,16 @@ showTool=function(name){
   if(name==='emoji')renderStkMgr();
 };
 
+/* ══════════ 底部Tab切换 ══════════ */
+document.querySelectorAll('.bottom-tabs button').forEach(function(btn){
+  btn.onclick=function(){
+    document.querySelectorAll('.bottom-tabs button').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.page).classList.add('active');
+  };
+});
+
 /* ── 启动 ── */
 init().catch(function(e){
   document.body.insertAdjacentHTML('beforeend','<div style="padding:20px;color:#c00;font-size:13px;">初始化失败：'+(e.message||e)+'</div>');

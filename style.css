@@ -385,3 +385,21 @@ details.think .tbody{
 
 /* ══ 气泡内表情包图片 ══ */
 .bubble .stk-img{max-width:150px;max-height:150px;border-radius:6px;vertical-align:middle;}
+
+/*══ 页面切换 ══ */
+.page{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
+.page.active{display:flex;}
+.bottom-tabs{
+  display:flex;flex-shrink:0;border-top:1px solid var(--line);
+  background:var(--card);padding:6px 0 calc(6px + env(safe-area-inset-bottom));position:sticky;bottom:0;z-index:20;
+}
+.bottom-tabs button{
+  flex:1;border:none;background:none;font-size:10px;color:var(--sub);
+  padding:4px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.bottom-tabs button.active{color:var(--accent);font-weight:600;}
+.bottom-tabs .tab-icon{font-size:18px;}
+.page-placeholder{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  color:var(--sub);font-size:13px;
+}

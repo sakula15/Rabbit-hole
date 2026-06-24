@@ -14,6 +14,8 @@
 </head>
 <body>
 
+<div class="page active" id="page-chat">
+
 <div class="topbar">
   <button class="icon-btn" id="btnConvs">☰</button>
   <h1 id="convTitle">对话<span class="ctx-badge" id="ctxBadge"></span></h1>
@@ -35,6 +37,25 @@
   <input type="file" id="fileInput" multiple accept="*/*" style="display:none">
   <textarea id="input" rows="1" placeholder="说点什么…"></textarea>
   <button class="send-btn" id="btnSend">➤</button>
+</div>
+
+</div><!-- page-chat结束 -->
+
+<div class="page" id="page-roles">
+  <div class="topbar"><h1>🎭 角色管理</h1></div>
+  <div class="page-placeholder">角色管理页面建设中…</div>
+</div>
+<div class="page" id="page-rp">
+  <div class="topbar"><h1>💬 角色聊天</h1></div>
+  <div class="page-placeholder">角色聊天页面建设中…</div>
+</div>
+<div class="page" id="page-persona">
+  <div class="topbar"><h1>👤 用户人设</h1></div>
+  <div class="page-placeholder">用户人设管理页面建设中…</div>
+</div>
+<div class="page" id="page-settings">
+  <div class="topbar"><h1>⚙️ 设置</h1></div>
+  <div class="page-placeholder">设置页面建设中…</div>
 </div>
 
 <!-- 对话抽屉 -->
@@ -198,6 +219,14 @@
       <button class="btn-clear" id="btnClearChat">清空当前对话消息</button>
     </div>
   </div>
+</div>
+
+<div class="bottom-tabs">
+  <button data-page="roles"><span class="tab-icon">🎭</span>角色</button>
+  <button data-page="rp"><span class="tab-icon">💬</span>聊天</button>
+  <button class="active" data-page="chat"><span class="tab-icon">🏠</span>讨论室</button>
+  <button data-page="persona"><span class="tab-icon">👤</span>人设</button>
+  <button data-page="settings"><span class="tab-icon">⚙️</span>设置</button>
 </div>
 
 <div class="toast" id="toast"></div>
