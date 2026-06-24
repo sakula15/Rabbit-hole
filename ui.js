@@ -44,6 +44,7 @@ async function init(){
   await stkLoad();
   render();renderMemberBar();updateTitle();
   await renderCharList();
+  await renderPersonaList();
 }
 
 /* ── 标题 ── */
@@ -861,6 +862,72 @@ document.getElementById('btnCharDel').onclick=async function(){
   closeCharEditor();
   await renderCharList();
   toast('角色已删除');
+};
+
+/* ══════════ 用户人设管理 ══════════ */
+var editingPersonaId=null;
+
+async function renderPersonaList(){
+  var list=await personaGetAll();
+  var el=document.getElementById('personaList');
+  if(!list.length){el.innerHTML='<div class="char-empty">还没有人设，点下面＋ 创建一个吧</div>';return;}
+  el.innerHTML='';
+  list.sort(function(a,b){return(b.updatedAt||0)-(a.updatedAt||0);});
+  list.forEach(function(p){
+    var card=document.createElement('div');
+    card.className='char-card';
+    var displayName=p.label?p.label+'<span style="font-size:11px;color:var(--sub);margin-left:6px;">→ '+p.name+'</span>':p.name;
+    card.innerHTML='<div class="char-avatar">👤</div><div class="char-info"><h3>'+displayName+'</h3>'+'<p>'+(p.content||'(无内容)').slice(0,80)+'</p></div>';
+    card.onclick=function(){openPersonaEditor(p);};
+    el.appendChild(card);
+  });
+}
+
+function openPersonaEditor(p){
+  editingPersonaId=p?p.id:null;
+  document.getElementById('personaEditorTitle').textContent=p?'编辑人设':'新建人设';
+  document.getElementById('personaName').value=p?p.name:'';
+  document.getElementById('personaLabel').value=p?p.label||'':'';
+  document.getElementById('personaContent').value=p?p.content||'':'';
+  document.getElementById('btnPersonaDel').style.display=p?'':'none';
+  document.getElementById('maskPersona').style.display='block';
+  document.getElementById('personaEditor').classList.add('open');
+}
+
+function closePersonaEditor(){
+  document.getElementById('maskPersona').style.display='none';
+  document.getElementById('personaEditor').classList.remove('open');
+  editingPersonaId=null;
+}
+
+document.getElementById('btnNewPersona').onclick=function(){openPersonaEditor(null);};
+document.getElementById('maskPersona').onclick=closePersonaEditor;
+document.getElementById('btnPersonaCancel').onclick=closePersonaEditor;
+
+document.getElementById('btnPersonaSave').onclick=async function(){
+  var name=document.getElementById('personaName').value.trim();
+  if(!name){toast('角色名称不能为空');return;}
+  var item={
+    id:editingPersonaId||uid(),
+    name:name,
+    label:document.getElementById('personaLabel').value.trim(),
+    content:document.getElementById('personaContent').value.trim(),
+    updatedAt:Date.now()
+  };
+  if(!editingPersonaId)item.createdAt=Date.now();
+  await personaSave(item);
+  closePersonaEditor();
+  await renderPersonaList();
+  toast('人设已保存');
+};
+
+document.getElementById('btnPersonaDel').onclick=async function(){
+  if(!editingPersonaId)return;
+  if(!confirm('确定删除这套人设？'))return;
+  await personaDel(editingPersonaId);
+  closePersonaEditor();
+  await renderPersonaList();
+  toast('人设已删除');
 };
 
 /* ── 启动 ── */

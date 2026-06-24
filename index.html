@@ -76,7 +76,31 @@
 </div>
 <div class="page" id="page-persona">
   <div class="topbar"><h1>👤 用户人设</h1></div>
-  <div class="page-placeholder">用户人设管理页面建设中…</div>
+  <div class="char-list" id="personaList"></div>
+  <div class="char-add-bar">
+    <button class="btn-new-conv" id="btnNewPersona">＋ 新建人设</button>
+  </div>
+  <div class="mask" id="maskPersona"></div>
+  <div class="char-editor" id="personaEditor">
+    <h2 id="personaEditorTitle">新建人设</h2>
+    <div class="field">
+      <label>角色名称（发送给AI识别）</label>
+      <input type="text" id="personaName" placeholder="你在故事里叫什么">
+    </div>
+    <div class="field">
+      <label>备注名（仅自己可见）</label>
+      <input type="text" id="personaLabel" placeholder="比如「跟琉璃用的」">
+    </div>
+    <div class="field">
+      <label>人设内容</label>
+      <textarea id="personaContent" rows="12" placeholder="写你的角色背景、性格…"></textarea>
+    </div>
+    <div class="panel-btns">
+      <button class="btn-danger" id="btnPersonaDel" style="display:none;">删除</button>
+      <button class="btn-clear" id="btnPersonaCancel">取消</button>
+      <button class="btn-save" id="btnPersonaSave">保存</button>
+    </div>
+  </div>
 </div>
 <div class="page" id="page-settings">
   <div class="topbar"><h1>⚙️ 设置</h1></div>

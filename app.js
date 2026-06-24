@@ -7,13 +7,14 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch
 var db=null;
 function openDB(){
   return new Promise(function(resolve,reject){
-    var req=indexedDB.open('minichat',3);
+    var req=indexedDB.open('minichat',4);
     req.onupgradeneeded=function(e){
       var d=e.target.result;
       if(!d.objectStoreNames.contains('kv'))d.createObjectStore('kv');
       if(!d.objectStoreNames.contains('msgs'))d.createObjectStore('msgs');
       if(!d.objectStoreNames.contains('stickers'))d.createObjectStore('stickers',{keyPath:'id'});
       if(!d.objectStoreNames.contains('characters'))d.createObjectStore('characters',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('personas'))d.createObjectStore('personas',{keyPath:'id'});
     };
     req.onsuccess=function(e){db=e.target.result;resolve();};
     req.onerror=function(e){reject(e.target.error);};
@@ -350,6 +351,27 @@ function charSave(item){
 function charDel(id){
   return new Promise(function(res,rej){
     var r=db.transaction('characters','readwrite').objectStore('characters').delete(id);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}
+
+/*── 用户人设 CRUD ── */
+function personaGetAll(){
+  return new Promise(function(res){
+    var tx=db.transaction('personas');var r=tx.objectStore('personas').getAll();
+    r.onsuccess=function(){res(r.result||[]);};
+    r.onerror=function(){res([]);};
+  });
+}
+function personaSave(item){
+  return new Promise(function(res,rej){
+    var r=db.transaction('personas','readwrite').objectStore('personas').put(item);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}
+function personaDel(id){
+  return new Promise(function(res,rej){
+    var r=db.transaction('personas','readwrite').objectStore('personas').delete(id);
     r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
   });
 }
