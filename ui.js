@@ -1139,6 +1139,10 @@ async function openRpChat(convId){
   document.getElementById('rpChatTitle').textContent=conv.name||'对话';
   rpMsgs=await msgsGet(convId);
   renderRpMessages(conv);
+  document.querySelector('#page-rp > .topbar').style.display='none';
+  document.querySelector('#page-rp > .rp-list').style.display='none';
+  document.querySelector('#page-rp > .char-add-bar').style.display='none';
+  document.querySelector('.bottom-tabs').style.display='none';
   document.getElementById('rpChatView').classList.add('open');
 }
 
@@ -1172,8 +1176,12 @@ function renderRpMessages(conv){
 
 function closeRpChat(){
   document.getElementById('rpChatView').classList.remove('open');
-  activeRpConvId=null;rpMsgs=[];
-  renderRpList();
+  document.querySelector('#page-rp > .topbar').style.display='';
+  document.querySelector('#page-rp > .rp-list').style.display='';
+  document.querySelector('#page-rp > .char-add-bar').style.display='';
+  document.querySelector('.bottom-tabs').style.display='';
+  activeRpConvId=null;
+  rpMsgs=[];renderRpList();
 }
 
 document.getElementById('rpBack').onclick=closeRpChat;
