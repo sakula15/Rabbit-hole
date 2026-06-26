@@ -432,3 +432,32 @@ details.think .tbody{
 .greeting-item{display:flex;gap:6px;margin-bottom:8px;align-items:flex-start;}
 .greeting-item textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;background:var(--bg);font-family:inherit;resize:vertical;min-height:60px;line-height:1.6;outline:none;}
 .greeting-item .greeting-del{flex-shrink:0;border:none;background:none;color:#c46a6a;font-size:16px;cursor:pointer;padding:8px;min-width:32px;min-height:32px;}
+
+/*══ 角色聊天折叠列表 ══ */
+.rp-list{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px;}
+.rp-group{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);}
+.rp-group-header{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
+  font-size:14px;font-weight:600;color:var(--fg);
+}
+.rp-group-header:active{opacity:.7;}
+.rp-group-arrow{font-size:10px;color:var(--sub);transition:transform .2s;}
+.rp-group.open .rp-group-arrow{transform:rotate(90deg);}
+.rp-group-body{display:none;border-top:1px solid var(--line);}
+.rp-group.open .rp-group-body{display:block;}
+.rp-conv-card{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;
+  cursor:pointer;border-bottom:1px solid var(--line);
+}
+.rp-conv-card:last-child{border-bottom:none;}
+.rp-conv-card:active{opacity:.7;}
+.rp-conv-info{flex:1;min-width:0;}
+.rp-conv-info h4{margin:0 0 2px;font-size:13px;color:var(--fg);font-weight:500;}
+.rp-conv-info p{margin:0;font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rp-conv-time{font-size:10px;color:var(--sub);flex-shrink:0;}
+.rp-empty{text-align:center;color:var(--sub);padding:40px 0;font-size:13px;}
+.rp-group-add{
+  display:block;width:100%;padding:10px;border:none;border-top:1px solid var(--line);
+  background:none;color:var(--accent);font-size:12px;cursor:pointer;text-align:center;
+}
+.rp-group-add:active{opacity:.7;}

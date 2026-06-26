@@ -7,7 +7,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch
 var db=null;
 function openDB(){
   return new Promise(function(resolve,reject){
-    var req=indexedDB.open('minichat',4);
+    var req=indexedDB.open('minichat',5);
     req.onupgradeneeded=function(e){
       var d=e.target.result;
       if(!d.objectStoreNames.contains('kv'))d.createObjectStore('kv');
@@ -15,6 +15,7 @@ function openDB(){
       if(!d.objectStoreNames.contains('stickers'))d.createObjectStore('stickers',{keyPath:'id'});
       if(!d.objectStoreNames.contains('characters'))d.createObjectStore('characters',{keyPath:'id'});
       if(!d.objectStoreNames.contains('personas'))d.createObjectStore('personas',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('rpconvs'))d.createObjectStore('rpconvs',{keyPath:'id'});
     };
     req.onsuccess=function(e){db=e.target.result;resolve();};
     req.onerror=function(e){reject(e.target.error);};
@@ -372,6 +373,27 @@ function personaSave(item){
 function personaDel(id){
   return new Promise(function(res,rej){
     var r=db.transaction('personas','readwrite').objectStore('personas').delete(id);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}
+
+/*──RP对话 CRUD ── */
+function rpConvGetAll(){
+  return new Promise(function(res){
+    var tx=db.transaction('rpconvs');var r=tx.objectStore('rpconvs').getAll();
+    r.onsuccess=function(){res(r.result||[]);};
+    r.onerror=function(){res([]);};
+  });
+}
+function rpConvSave(item){
+  return new Promise(function(res,rej){
+    var r=db.transaction('rpconvs','readwrite').objectStore('rpconvs').put(item);
+    r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
+  });
+}
+function rpConvDel(id){
+  return new Promise(function(res,rej){
+    var r=db.transaction('rpconvs','readwrite').objectStore('rpconvs').delete(id);
     r.onsuccess=function(){res();};r.onerror=function(){rej(r.error);};
   });
 }

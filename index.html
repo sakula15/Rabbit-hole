@@ -76,7 +76,31 @@
 </div>
 <div class="page" id="page-rp">
   <div class="topbar"><h1>💬 角色聊天</h1></div>
-  <div class="page-placeholder">角色聊天页面建设中…</div>
+  <div class="rp-list" id="rpList"></div>
+  <div class="char-add-bar">
+    <button class="btn-new-conv" id="btnNewRp">＋ 新建对话</button>
+  </div>
+  <!-- 新建对话弹窗 -->
+  <div class="mask" id="maskNewRp"></div>
+  <div class="char-editor" id="newRpPanel">
+    <h2>新建角色对话</h2>
+    <div class="field"><label>选择角色</label>
+      <select id="rpSelChar" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:var(--bg);"></select>
+    </div>
+    <div class="field"><label>选择用户人设（可跳过）</label>
+      <select id="rpSelPersona" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:var(--bg);"></select>
+    </div>
+    <div class="field" id="rpGreetingField" style="display:none;"><label>选择开场白（可跳过）</label>
+      <select id="rpSelGreeting" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:10px;font-size:13px;background:var(--bg);"></select>
+    </div>
+    <div class="field"><label>对话备注名</label>
+      <input type="text" id="rpConvName" placeholder="给这个对话起个名字（可选）">
+    </div>
+    <div class="panel-btns">
+      <button class="btn-clear" id="btnNewRpCancel">取消</button>
+      <button class="btn-save" id="btnNewRpCreate">创建</button>
+    </div>
+  </div>
 </div>
 <div class="page" id="page-persona">
   <div class="topbar"><h1>👤 用户人设</h1></div>

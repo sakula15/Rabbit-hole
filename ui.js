@@ -45,6 +45,7 @@ async function init(){
   render();renderMemberBar();updateTitle();
   await renderCharList();
   await renderPersonaList();
+  await renderRpList();
 }
 
 /* ── 标题 ── */
@@ -987,6 +988,141 @@ document.getElementById('btnPersonaDel').onclick=async function(){
   closePersonaEditor();
   await renderPersonaList();
   toast('人设已删除');
+};
+
+/* ══════════ 角色聊天列表 ══════════ */
+
+async function renderRpList(){
+  var convs=await rpConvGetAll();
+  var chars=await charGetAll();
+  var el=document.getElementById('rpList');
+  if(!convs.length&&!chars.length){
+    el.innerHTML='<div class="rp-empty">还没有角色对话<br>先去角色管理创建角色吧</div>';
+    return;
+  }
+  if(!convs.length){
+    el.innerHTML='<div class="rp-empty">还没有对话，点下面＋ 开始吧</div>';
+    return;
+  }
+  el.innerHTML='';
+  var groups={};
+  convs.sort(function(a,b){return(b.updatedAt||0)-(a.updatedAt||0);});
+  convs.forEach(function(c){
+    var cid=c.charId||'_none';
+    if(!groups[cid])groups[cid]=[];
+    groups[cid].push(c);
+  });
+  chars.forEach(function(ch){
+    if(!groups[ch.id])return;
+    var group=document.createElement('div');
+    group.className='rp-group open';
+    var header=document.createElement('div');
+    header.className='rp-group-header';
+    header.innerHTML='<span class="rp-group-arrow">▶</span>'+'<span>'+(ch.avatar||'🎭')+'</span>'
+      +'<span>'+ch.name+'</span>'
+      +'<span style="font-size:11px;color:var(--sub);font-weight:400;">'+groups[ch.id].length+'个对话</span>';
+    header.onclick=function(){group.classList.toggle('open');};
+    var body=document.createElement('div');
+    body.className='rp-group-body';
+    groups[ch.id].forEach(function(c){
+      var card=document.createElement('div');
+      card.className='rp-conv-card';
+      card.innerHTML='<div class="rp-conv-info"><h4>'+(c.name||'未命名对话')+'</h4>'
+        +'<p>'+(c.lastMsg||'还没有消息')+'</p></div>'
+        +'<span class="rp-conv-time">'+(c.updatedAt?fmtTime(c.updatedAt):'')+'</span>';
+      card.onclick=function(){toast('聊天窗口建设中…');};
+      body.appendChild(card);
+    });
+    group.appendChild(header);
+    group.appendChild(body);
+    el.appendChild(group);
+    delete groups[ch.id];
+  });
+}
+
+document.getElementById('btnNewRp').onclick=async function(){
+  var chars=await charGetAll();
+  var personas=await personaGetAll();
+  var sel=document.getElementById('rpSelChar');
+  sel.innerHTML='';
+  if(!chars.length){toast('请先去角色管理创建角色');return;}
+  chars.forEach(function(ch){
+    var opt=document.createElement('option');
+    opt.value=ch.id;opt.textContent=(ch.avatar||'🎭')+' '+ch.name;
+    sel.appendChild(opt);
+  });
+  var pSel=document.getElementById('rpSelPersona');
+  pSel.innerHTML='<option value="">(不使用人设)</option>';
+  personas.forEach(function(p){
+    var opt=document.createElement('option');
+    opt.value=p.id;opt.textContent=(p.avatar||'👤')+' '+(p.label||p.name);
+    pSel.appendChild(opt);
+  });
+  sel.onchange=function(){updateGreetingSelect(chars);};
+  updateGreetingSelect(chars);document.getElementById('rpConvName').value='';
+  document.getElementById('maskNewRp').style.display='block';
+  document.getElementById('newRpPanel').classList.add('open');
+};
+
+function updateGreetingSelect(chars){
+  var charId=document.getElementById('rpSelChar').value;
+  var ch=chars.find(function(c){return c.id===charId;});
+  var field=document.getElementById('rpGreetingField');
+  var gSel=document.getElementById('rpSelGreeting');
+  if(ch&&ch.greetings&&ch.greetings.length){
+    field.style.display='';
+    gSel.innerHTML='<option value="-1">(不使用开场白)</option>';
+    ch.greetings.forEach(function(g,i){
+      var opt=document.createElement('option');
+      opt.value=i;opt.textContent='#'+(i+1)+'：'+g.slice(0,30)+(g.length>30?'…':'');
+      gSel.appendChild(opt);
+    });
+  }else{
+    field.style.display='none';
+    gSel.innerHTML='';
+  }
+}
+
+function closeNewRpPanel(){
+  document.getElementById('maskNewRp').style.display='none';
+  document.getElementById('newRpPanel').classList.remove('open');
+}
+
+document.getElementById('maskNewRp').onclick=closeNewRpPanel;
+document.getElementById('btnNewRpCancel').onclick=closeNewRpPanel;
+
+document.getElementById('btnNewRpCreate').onclick=async function(){
+  var charId=document.getElementById('rpSelChar').value;
+  var personaId=document.getElementById('rpSelPersona').value||null;
+  var chars=await charGetAll();
+  var ch=chars.find(function(c){return c.id===charId;});
+  if(!ch){toast('请选择角色');return;}
+  var greetIdx=parseInt(document.getElementById('rpSelGreeting').value);
+  var greeting=(ch.greetings&&greetIdx>=0)?ch.greetings[greetIdx]:null;
+  var convName=document.getElementById('rpConvName').value.trim()||ch.name+' 对话';
+  var conv={
+    id:uid(),
+    charId:charId,
+    personaId:personaId,
+    name:convName,
+    scenario:'',
+    channelId:'',
+    model:'',
+    ctx:20,
+    temp:0.8,
+    topP:0.95,
+    stream:true,
+    lastMsg:greeting?greeting.slice(0,50):'',
+    createdAt:Date.now(),
+    updatedAt:Date.now()
+  };
+  await rpConvSave(conv);
+  if(greeting){
+    await msgsSet(conv.id,[{role:'assistant',content:greeting,ts:Date.now()}]);
+  }
+  closeNewRpPanel();
+  await renderRpList();
+  toast('对话已创建');
 };
 
 /* ── 启动 ── */
