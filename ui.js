@@ -825,6 +825,7 @@ function openCharEditor(ch){
   document.getElementById('charSystem').value=ch?ch.system||'':'';
   document.getElementById('btnCharDel').style.display=ch?'':'none';
   document.getElementById('maskChar').style.display='block';
+  renderGreetings(ch?ch.greetings||[]:[]);
   document.getElementById('charEditor').classList.add('open');
 }
 
@@ -846,6 +847,7 @@ document.getElementById('btnCharSave').onclick=async function(){
     name:name,
     avatar:document.getElementById('charAvatar').value.trim()||'🎭',
     system:document.getElementById('charSystem').value.trim(),
+    greetings:collectGreetings(),
     updatedAt:Date.now()
   };
   if(!editingCharId)item.createdAt=Date.now();
@@ -862,6 +864,61 @@ document.getElementById('btnCharDel').onclick=async function(){
   closeCharEditor();
   await renderCharList();
   toast('角色已删除');
+};
+
+function renderGreetings(list){
+  var el=document.getElementById('charGreetings');
+  el.innerHTML='';
+  if(!list.length)list=[''];
+  list.forEach(function(text,i){
+    var row=document.createElement('div');
+    row.className='greeting-item';
+    var ta=document.createElement('textarea');
+    ta.value=text;
+    ta.placeholder='开场白 #'+(i+1)+'（角色的第一句话）';
+    ta.rows=3;
+    var del=document.createElement('button');
+    del.className='greeting-del';
+    del.textContent='✕';
+    del.onclick=function(){
+      row.remove();
+      var items=document.querySelectorAll('#charGreetings .greeting-item');
+      if(!items.length)renderGreetings(['']);
+    };
+    row.appendChild(ta);
+    row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+
+function collectGreetings(){
+  var result=[];
+  document.querySelectorAll('#charGreetings .greeting-item textarea').forEach(function(ta){
+    var v=ta.value.trim();
+    if(v)result.push(v);
+  });
+  return result;
+}
+
+document.getElementById('btnAddGreeting').onclick=function(){
+  var el=document.getElementById('charGreetings');
+  var count=el.querySelectorAll('.greeting-item').length;
+  var row=document.createElement('div');
+  row.className='greeting-item';
+  var ta=document.createElement('textarea');
+  ta.placeholder='开场白 #'+(count+1)+'（角色的第一句话）';
+  ta.rows=3;
+  var del=document.createElement('button');
+  del.className='greeting-del';
+  del.textContent='✕';
+  del.onclick=function(){
+    row.remove();
+    var items=document.querySelectorAll('#charGreetings .greeting-item');
+    if(!items.length)renderGreetings(['']);
+  };
+  row.appendChild(ta);
+  row.appendChild(del);
+  el.appendChild(row);
 };
 
 /* ══════════ 用户人设管理 ══════════ */

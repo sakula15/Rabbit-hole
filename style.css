@@ -427,3 +427,8 @@ details.think .tbody{
 .char-editor h2{margin:0 0 16px;font-size:16px;}
 .char-editor textarea{min-height:200px;}
 .char-empty{text-align:center;color:var(--sub);padding:40px 0;font-size:13px;}
+
+/*══ 开场白 ══ */
+.greeting-item{display:flex;gap:6px;margin-bottom:8px;align-items:flex-start;}
+.greeting-item textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;background:var(--bg);font-family:inherit;resize:vertical;min-height:60px;line-height:1.6;outline:none;}
+.greeting-item .greeting-del{flex-shrink:0;border:none;background:none;color:#c46a6a;font-size:16px;cursor:pointer;padding:8px;min-width:32px;min-height:32px;}
