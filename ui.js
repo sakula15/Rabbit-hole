@@ -1030,7 +1030,7 @@ async function renderRpList(){
       card.innerHTML='<div class="rp-conv-info"><h4>'+(c.name||'未命名对话')+'</h4>'
         +'<p>'+(c.lastMsg||'还没有消息')+'</p></div>'
         +'<span class="rp-conv-time">'+(c.updatedAt?fmtTime(c.updatedAt):'')+'</span>';
-      card.onclick=function(){toast('聊天窗口建设中…');};
+      card.onclick=function(){openRpChat(c.id);};
       body.appendChild(card);
     });
     group.appendChild(header);
@@ -1105,6 +1105,8 @@ document.getElementById('btnNewRpCreate').onclick=async function(){
     charId:charId,
     personaId:personaId,
     name:convName,
+    charName:ch.name,
+    charAvatar:ch.avatar||'🎭',
     scenario:'',
     channelId:'',
     model:'',
@@ -1123,6 +1125,130 @@ document.getElementById('btnNewRpCreate').onclick=async function(){
   closeNewRpPanel();
   await renderRpList();
   toast('对话已创建');
+};
+
+/* ══════════RP聊天窗口 ══════════ */
+var activeRpConvId=null;
+var rpMsgs=[];
+
+async function openRpChat(convId){
+  activeRpConvId=convId;
+  var convs=await rpConvGetAll();
+  var conv=convs.find(function(c){return c.id===convId;});
+  if(!conv){toast('对话不存在');return;}
+  document.getElementById('rpChatTitle').textContent=conv.name||'对话';
+  rpMsgs=await msgsGet(convId);
+  renderRpMessages(conv);
+  document.getElementById('rpChatView').classList.add('open');
+}
+
+function renderRpMessages(conv){
+  var el=document.getElementById('rpMessages');
+  el.innerHTML='';
+  if(!rpMsgs.length){
+    el.innerHTML='<div class="rp-empty">发送第一条消息开始对话</div>';
+    return;
+  }
+  rpMsgs.forEach(function(m){
+    if(m.role==='assistant'){
+      var div=document.createElement('div');
+      div.className='rp-msg-ai';
+      div.innerHTML='<div class="rp-msg-ai-avatar">'+(conv.charAvatar||'🎭')+'</div>'+'<div class="rp-msg-ai-body">'
+        +'<div class="rp-msg-ai-name">'+(conv.charName||'角色')+'</div>'
+        +'<div>'+formatMd(m.content||'')+'</div>'
+        +'<div class="rp-msg-time">'+(m.ts?fmtTime(m.ts):'')+'</div>'
+        +'</div>';
+      el.appendChild(div);
+    }else{
+      var div=document.createElement('div');
+      div.className='rp-msg-user';
+      div.innerHTML='<div><div class="rp-msg-user-bubble">'+(m.content||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        +'</div><div class="rp-msg-time" style="text-align:right;">'+(m.ts?fmtTime(m.ts):'')+'</div></div>';
+      el.appendChild(div);
+    }
+  });
+  el.scrollTop=el.scrollHeight;
+}
+
+function closeRpChat(){
+  document.getElementById('rpChatView').classList.remove('open');
+  activeRpConvId=null;rpMsgs=[];
+  renderRpList();
+}
+
+document.getElementById('rpBack').onclick=closeRpChat;
+
+/* RP设置面板 */
+document.getElementById('rpChatSettings').onclick=async function(){
+  if(!activeRpConvId)return;
+  var convs=await rpConvGetAll();
+  var conv=convs.find(function(c){return c.id===activeRpConvId;});
+  if(!conv)return;
+  var chSel=document.getElementById('rpSetChannel');
+  chSel.innerHTML='<option value="">(未选择)</option>';
+  channels.forEach(function(ch){
+    var opt=document.createElement('option');
+    opt.value=ch.id;opt.textContent=ch.name;
+    if(ch.id===conv.channelId)opt.selected=true;
+    chSel.appendChild(opt);
+  });
+  document.getElementById('rpSetModel').value=conv.model||'';
+  document.getElementById('rpSetScenario').value=conv.scenario||'';
+  document.getElementById('rpSetCtx').value=conv.ctx||20;
+  document.getElementById('rpCtxVal').textContent=conv.ctx||20;
+  document.getElementById('rpSetTemp').value=conv.temp||0.8;
+  document.getElementById('rpTempVal').textContent=conv.temp||0.8;
+  document.getElementById('rpSetTopP').value=conv.topP||0.95;
+  document.getElementById('rpTopPVal').textContent=conv.topP||0.95;
+  document.getElementById('rpStreamOn').classList.toggle('active',conv.stream!==false);
+  document.getElementById('rpStreamOff').classList.toggle('active',conv.stream===false);
+  document.getElementById('maskRpSettings').style.display='block';
+  document.getElementById('rpSettingsPanel').classList.add('open');
+};
+
+document.getElementById('rpSetCtx').oninput=function(){document.getElementById('rpCtxVal').textContent=this.value;};
+document.getElementById('rpSetTemp').oninput=function(){document.getElementById('rpTempVal').textContent=this.value;};
+document.getElementById('rpSetTopP').oninput=function(){document.getElementById('rpTopPVal').textContent=this.value;};
+
+document.getElementById('rpStreamOn').onclick=function(){
+  this.classList.add('active');document.getElementById('rpStreamOff').classList.remove('active');
+};
+document.getElementById('rpStreamOff').onclick=function(){
+  this.classList.add('active');document.getElementById('rpStreamOn').classList.remove('active');
+};
+
+document.getElementById('maskRpSettings').onclick=function(){
+  document.getElementById('maskRpSettings').style.display='none';
+  document.getElementById('rpSettingsPanel').classList.remove('open');
+};
+
+document.getElementById('btnRpSaveSettings').onclick=async function(){
+  if(!activeRpConvId)return;
+  var convs=await rpConvGetAll();
+  var conv=convs.find(function(c){return c.id===activeRpConvId;});
+  if(!conv)return;
+  conv.channelId=document.getElementById('rpSetChannel').value;
+  conv.model=document.getElementById('rpSetModel').value.trim();
+  conv.scenario=document.getElementById('rpSetScenario').value.trim();
+  conv.ctx=parseInt(document.getElementById('rpSetCtx').value);
+  conv.temp=parseFloat(document.getElementById('rpSetTemp').value);
+  conv.topP=parseFloat(document.getElementById('rpSetTopP').value);
+  conv.stream=document.getElementById('rpStreamOn').classList.contains('active');
+  await rpConvSave(conv);
+  document.getElementById('maskRpSettings').style.display='none';
+  document.getElementById('rpSettingsPanel').classList.remove('open');
+  toast('设置已保存');
+};
+
+document.getElementById('btnRpDelConv').onclick=async function(){
+  if(!activeRpConvId)return;
+  if(!confirm('确定删除这个对话？'))return;
+  await rpConvDel(activeRpConvId);
+  await msgsDel(activeRpConvId);
+  document.getElementById('maskRpSettings').style.display='none';
+  document.getElementById('rpSettingsPanel').classList.remove('open');
+  closeRpChat();
+  toast('对话已删除');
 };
 
 /* ── 启动 ── */
