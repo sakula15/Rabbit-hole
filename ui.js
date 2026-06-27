@@ -824,10 +824,16 @@ function openCharEditor(ch){
   document.getElementById('charEditorTitle').textContent=ch?'编辑角色':'新建角色';
   document.getElementById('charName').value=ch?ch.name:'';
   document.getElementById('charAvatar').value=ch?ch.avatar||'🎭':'🎭';
-  document.getElementById('charSystem').value=ch?ch.system||'':'';
+  document.getElementById('charSystem').value=ch?ch.description||ch.system||'':'';
   document.getElementById('btnCharDel').style.display=ch?'':'none';
   document.getElementById('maskChar').style.display='block';
-  renderGreetings(ch?ch.greetings||[]:[]);
+  var gList=[];
+  if(ch){
+    if(ch.first_mes)gList.push(ch.first_mes);
+    if(ch.alternate_greetings)gList=gList.concat(ch.alternate_greetings);
+    if(!gList.length&&ch.greetings)gList=ch.greetings;
+  }
+  renderGreetings(gList);
   document.getElementById('charEditor').classList.add('open');
 }
 
@@ -840,16 +846,17 @@ function closeCharEditor(){
 document.getElementById('btnNewChar').onclick=function(){openCharEditor(null);};
 document.getElementById('maskChar').onclick=closeCharEditor;
 document.getElementById('btnCharCancel').onclick=closeCharEditor;
-
 document.getElementById('btnCharSave').onclick=async function(){
   var name=document.getElementById('charName').value.trim();
   if(!name){toast('名字不能为空');return;}
+  var gs=collectGreetings();
   var item={
     id:editingCharId||uid(),
     name:name,
     avatar:document.getElementById('charAvatar').value.trim()||'🎭',
-    system:document.getElementById('charSystem').value.trim(),
-    greetings:collectGreetings(),
+    description:document.getElementById('charSystem').value.trim(),
+    first_mes:gs[0]||'',
+    alternate_greetings:gs.slice(1),
     updatedAt:Date.now()
   };
   if(!editingCharId)item.createdAt=Date.now();
@@ -921,6 +928,42 @@ document.getElementById('btnAddGreeting').onclick=function(){
   row.appendChild(ta);
   row.appendChild(del);
   el.appendChild(row);
+};
+
+/*══ tavo角色卡导入 ══ */
+document.getElementById('btnImportChar').onclick=function(){
+  document.getElementById('charImportFile').click();
+};
+
+document.getElementById('charImportFile').onchange=async function(e){
+  var file=e.target.files[0];
+  if(!file)return;
+  try{
+    var text=await file.text();
+    var json=JSON.parse(text);
+    var d=json.data||json;
+    var name=d.name||file.name.replace('.json','');
+    var gs=[];
+    if(d.first_mes)gs.push(d.first_mes);
+    if(d.alternate_greetings&&Array.isArray(d.alternate_greetings)){
+      d.alternate_greetings.forEach(function(g){if(g)gs.push(g);});
+    }
+    var item={
+      id:uid(),
+      name:name,
+      avatar:d.avatar||'🎭',
+      description:d.description||d.system||'',
+      first_mes:gs[0]||'',
+      alternate_greetings:gs.slice(1),
+      updatedAt:Date.now()
+    };
+    await charSave(item);
+    await renderCharList();
+    toast('角色「'+name+'」导入成功');
+  }catch(err){
+    toast('导入失败：'+err.message);
+  }
+  e.target.value='';
 };
 
 /* ══════════ 用户人设管理 ══════════ */
