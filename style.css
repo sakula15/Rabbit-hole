@@ -428,6 +428,17 @@ details.think .tbody{
 .char-editor textarea{min-height:200px;}
 .char-empty{text-align:center;color:var(--sub);padding:40px 0;font-size:13px;}
 
+/*══ 导入按钮 ══*/
+#btnImportChar{
+  padding:8px 14px;
+  border:1px dashed var(--accent);
+  border-radius:10px;
+  color:var(--accent);
+  background:none;
+  cursor:pointer;
+}
+#btnImportChar:active{opacity:.7;}
+
 /*══ 开场白 ══ */
 .greeting-item{display:flex;gap:6px;margin-bottom:8px;align-items:flex-start;}
 .greeting-item textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;background:var(--bg);font-family:inherit;resize:vertical;min-height:60px;line-height:1.6;outline:none;}

@@ -813,7 +813,7 @@ async function renderCharList(){
     var card=document.createElement('div');
     card.className='char-card';
     card.innerHTML='<div class="char-avatar">'+(ch.avatar||'🎭')+'</div>'+'<div class="char-info"><h3>'+ch.name+'</h3>'
-      +'<p>'+(ch.system||'(无人设)').slice(0,80)+'</p></div>';
+      +'<p>'+(ch.description||ch.system||'（无人设）').slice(0,80)+'</p></div>';
     card.onclick=function(){openCharEditor(ch);};
     el.appendChild(card);
   });
