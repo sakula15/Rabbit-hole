@@ -249,6 +249,7 @@ function renderConvList(){
 async function switchConv(id){
   if(streaming){toast('生成中，请先停止');return;}
   activeId=id;msgs=await msgsGet(id);editIdx=null;
+  document.getElementById('input').value='';
   await kvSet('activeId',id);
   closeDrawer();render();renderMemberBar();updateTitle();
 }
@@ -1138,6 +1139,7 @@ async function openRpChat(convId){
   if(!conv){toast('对话不存在');return;}
   document.getElementById('rpChatTitle').textContent=conv.name||'对话';
   rpMsgs=await msgsGet(convId);
+  document.getElementById('rpInput').value='';
   renderRpMessages(conv);
   document.querySelector('#page-rp > .topbar').style.display='none';
   document.querySelector('#page-rp > .rp-list').style.display='none';
