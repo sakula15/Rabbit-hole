@@ -1198,36 +1198,386 @@ function renderRpMessages(conv){
     el.innerHTML='<div class="rp-empty">发送第一条消息开始对话</div>';
     return;
   }
-  rpMsgs.forEach(function(m){
+  rpMsgs.forEach(function(m,i){
+    var wrap=document.createElement('div');
+    wrap.className='msg-wrap '+(m.role==='user'?'user':'ai');
     if(m.role==='assistant'){
-      var div=document.createElement('div');
-      div.className='rp-msg-ai';
-      div.innerHTML='<div class="rp-msg-ai-avatar">'+(conv.charAvatar||'🎭')+'</div>'+'<div class="rp-msg-ai-body">'
-        +'<div class="rp-msg-ai-name">'+(conv.charName||'角色')+'</div>'
-        +'<div>'+formatMd(m.content||'')+'</div>'
-        +'<div class="rp-msg-time">'+(m.ts?fmtTime(m.ts):'')+'</div>'
-        +'</div>';
-      el.appendChild(div);
+      if(conv.charName){
+        var tag=document.createElement('div');
+        tag.className='model-tag';
+        tag.textContent=(conv.charAvatar||'🎭')+' '+conv.charName;
+        wrap.appendChild(tag);
+      }
+      if(m.reasoning){
+        var det=document.createElement('details');det.className='think';
+        det.innerHTML='<summary>💭 思考过程 ('+m.reasoning.length+'字)</summary>';
+        var tbody=document.createElement('div');tbody.className='tbody';
+        tbody.textContent=m.reasoning;
+        det.appendChild(tbody);wrap.appendChild(det);
+      }
+      var row=document.createElement('div');
+      row.className='msg ai';
+      var txt=document.createElement('span');txt.className='txt';
+      txt.innerHTML=renderMd(m.content||'');
+      row.appendChild(txt);
+      row.onclick=function(){if(streaming)return;wrap.classList.toggle('show-actions');};
+      wrap.appendChild(row);
     }else{
-      var div=document.createElement('div');
-      div.className='rp-msg-user';
-      div.innerHTML='<div><div class="rp-msg-user-bubble">'+(m.content||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-        +'</div><div class="rp-msg-time" style="text-align:right;">'+(m.ts?fmtTime(m.ts):'')+'</div></div>';
-      el.appendChild(div);
+      var row=document.createElement('div');
+      row.className='msg user';
+      var b=document.createElement('div');b.className='bubble';
+      if(m.images&&m.images.length){
+        m.images.forEach(function(src){
+          var img=document.createElement('img');img.className='att';img.src=src;
+          b.appendChild(img);
+        });
+      }
+      var txt=document.createElement('span');txt.className='txt';
+      txt.innerHTML=renderMd(m.content||'');
+      b.appendChild(txt);
+      b.onclick=function(){if(streaming)return;wrap.classList.toggle('show-actions');};
+      row.appendChild(b);wrap.appendChild(row);
+    }
+    var act=document.createElement('div');act.className='actions';
+    var bc=document.createElement('button');bc.textContent='📋 复制';
+    bc.onclick=function(){
+      var t=m.content||'';
+      if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){toast('已复制 ✓');}).catch(function(){toast('复制失败');});}
+      else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('已复制 ✓');}
+    };
+    act.appendChild(bc);
+    if(m.role==='user'){
+      var be=document.createElement('button');be.textContent='✏️ 编辑';
+      (function(idx){
+        be.onclick=function(){
+          if(streaming)return;
+          rpStartEdit(idx,conv);
+        };
+      })(i);
+      act.appendChild(be);
+    }
+    if(m.role==='assistant'){
+      var br=document.createElement('button');br.textContent='🔄 重说';
+      (function(idx){
+        br.onclick=async function(){
+          if(streaming)return;
+          rpMsgs[idx].content='';rpMsgs[idx].reasoning='';
+          rpMsgs[idx].meta=null;rpMsgs[idx].ts=Date.now();
+          await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);
+          await rpRunGeneration(idx,conv);
+        };
+      })(i);
+      act.appendChild(br);
+    }
+    var bk=document.createElement('button');bk.textContent='↩️ 回溯';
+    (function(idx){
+      bk.onclick=async function(){
+        if(streaming)return;
+        var after=rpMsgs.length-idx-1;
+        if(after<=0){toast('后面没有消息了');return;}
+        if(!confirm('删除这条之后的 '+after+' 条消息？'))return;
+        rpMsgs.splice(idx+1);
+        await msgsSet(conv.id,rpMsgs);
+        conv.lastMsg=(rpMsgs[rpMsgs.length-1]&&rpMsgs[rpMsgs.length-1].content||'').slice(0,50);
+        conv.updatedAt=Date.now();
+        await rpConvSave(conv);
+        renderRpMessages(conv);
+        toast('已回溯 ✓');
+      };
+    })(i);
+    act.appendChild(bk);
+    var bd=document.createElement('button');bd.className='warn';bd.textContent='🗑 删除';
+    (function(idx){
+      bd.onclick=async function(){
+        if(streaming)return;
+        rpMsgs.splice(idx,1);
+        await msgsSet(conv.id,rpMsgs);
+        renderRpMessages(conv);
+        toast('已删除');
+      };
+    })(i);
+    act.appendChild(bd);
+    wrap.appendChild(act);
+    var meta=document.createElement('div');meta.className='meta-line';
+    var parts=[fmtTime(m.ts)];
+    if(m.role==='assistant'&&m.meta){
+      var pre=m.meta.est?'~':'';
+      parts.push('↑'+pre+(m.meta.inTok||0)+' tok','↓'+pre+(m.meta.outTok||0)+' tok',((m.meta.ms||0)/1000).toFixed(1)+'s');
+    }
+    meta.textContent=parts.filter(Boolean).join(' · ');
+    wrap.appendChild(meta);
+    el.appendChild(wrap);
+  });el.scrollTop=el.scrollHeight;
+}
+
+function rpStartEdit(idx,conv){
+  var el=document.getElementById('rpMessages');
+  var wraps=el.querySelectorAll('.msg-wrap');
+  var wrap=wraps[idx];if(!wrap)return;
+  wrap.innerHTML='';
+  var box=document.createElement('div');box.className='edit-box';
+  var ta=document.createElement('textarea');
+  ta.value=rpMsgs[idx].content||'';
+  ta.style.minHeight='80px';
+  ta.style.maxHeight='50vh';
+  setTimeout(function(){
+    ta.style.height='auto';
+    ta.style.height=Math.min(ta.scrollHeight,window.innerHeight*0.5)+'px';
+  },10);
+  ta.addEventListener('input',function(){
+    ta.style.height='auto';
+    ta.style.height=Math.min(ta.scrollHeight,window.innerHeight*0.5)+'px';
+  });
+  var btns=document.createElement('div');btns.className='edit-btns';
+  var cancel=document.createElement('button');cancel.className='edit-cancel';
+  cancel.textContent='取消';
+  cancel.onclick=function(){renderRpMessages(conv);};
+  var save=document.createElement('button');save.className='edit-save';
+  save.textContent='保存';
+  save.onclick=async function(){
+    rpMsgs[idx].content=ta.value;
+    await msgsSet(conv.id,rpMsgs);
+    renderRpMessages(conv);
+    toast('已保存 ✓');
+  };
+  btns.appendChild(cancel);btns.appendChild(save);
+  var resend=document.createElement('button');resend.className='edit-save';
+  resend.textContent='保存并重新生成';
+  resend.onclick=async function(){
+    if(streaming)return;
+    rpMsgs[idx].content=ta.value;rpMsgs[idx].ts=Date.now();
+    rpMsgs.splice(idx+1);
+    rpMsgs.push({role:'assistant',content:'',reasoning:'',ts:Date.now()});
+    await msgsSet(conv.id,rpMsgs);
+    renderRpMessages(conv);
+    await rpRunGeneration(rpMsgs.length-1,conv);
+  };
+  btns.appendChild(resend);
+  box.appendChild(ta);box.appendChild(btns);wrap.appendChild(box);
+  setTimeout(function(){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);},50);
+}
+
+/* ══════════ RP发消息核心 ══════════ */
+
+async function buildRpPayload(conv,upToIndex){
+  var sys='';
+  var chars=await charGetAll();
+  var ch=chars.find(function(c){return c.id===conv.charId;});
+  var charName=ch?ch.name:'角色';
+  var charDesc=ch?(ch.description||ch.system||''):'';
+  var userName='用户';
+  var personaContent='';
+  if(conv.personaId){
+    var personas=await personaGetAll();
+    var p=personas.find(function(x){return x.id===conv.personaId;});
+    if(p){
+      userName=p.name||'用户';
+      personaContent=p.content||'';
+    }
+  }
+  sys+='1. 静下心来思考你作为'+charName+'是个什么样的存在？TA的人际关系网和人生轨迹是什么样的？TA会如何与人相处交流？\n';
+  sys+='2. 你作为'+charName+'与'+userName+'目前是什么关系？感情需要培养，不必太过心急，你在乎的是快速推到下一个剧情点还是'+userName+'感受？\n';
+  sys+='3. 与'+charName+'有关的人现在在做什么？你还记得TA们吗？TA们会怎么与'+charName+'和'+userName+'互动交流？';
+  if(charDesc){
+    sys+='\n\n【'+charName+'】\n'+charDesc;
+  }
+  if(personaContent){
+    sys+='\n\n【'+userName+'】\n'+personaContent;
+  }
+  if(conv.scenario){
+    sys+='\n\n【当前情景】\n'+conv.scenario;
+  }
+  if(stickers.length){
+    var cats={};
+    stickers.forEach(function(s){
+      var c=s.cat||'其他';
+      if(!cats[c])cats[c]=[];
+      cats[c].push(s.name+(s.desc?'('+s.desc+')':''));
+    });
+    var stkText='\n\n【表情包】当且仅当'+charName+'在剧情中正在使用手机、电脑等通讯工具发送消息时，可以从以下表情包中选择合适的使用，其他场景下不要使用。用[表情:名字]+换行符发送。';
+    Object.keys(cats).forEach(function(cat){
+      stkText+='\n['+cat+'] 可用：'+cats[cat].join('|');
+    });
+    sys+=stkText;
+  }
+  var out=[];
+  if(sys)out.push({role:'system',content:sys});
+  var hist=rpMsgs.slice(0,upToIndex);
+  var slice=conv.ctx>0?hist.slice(-conv.ctx):hist.slice(-1);
+  slice.forEach(function(m){
+    if(m.images&&m.images.length){
+      var parts=[];
+      if(m.content)parts.push({type:'text',text:m.content});
+      m.images.forEach(function(src){parts.push({type:'image_url',image_url:{url:src}});});
+      out.push({role:m.role,content:parts});
+    }else{
+      out.push({role:m.role,content:m.content||''});
     }
   });
+  return out;
+}
+
+function rpUpdateMsgDom(i,conv){
+  var el=document.getElementById('rpMessages');
+  var nodes=el.children;
+  if(!nodes[i])return;
+  var m=rpMsgs[i];
+  var node=nodes[i];
+  var body=node.querySelector('.rp-msg-ai-body');
+  if(!body)return;
+  var det=node.querySelector('details.think');
+  if(m.reasoning&&!det){
+    det=document.createElement('details');det.className='think';det.open=true;
+    det.innerHTML='<summary>💭 思考中</summary><div class="tbody"></div>';
+    body.insertBefore(det,body.querySelector('.rp-msg-content'));
+  }
+  if(det&&m.reasoning){
+    det.querySelector('.tbody').textContent=m.reasoning;
+    det.querySelector('summary').textContent=m.content?'💭 思考过程 ('+m.reasoning.length+'字)':'💭 思考中…';
+    if(m.content)det.open=false;
+  }
+  var contentEl=node.querySelector('.rp-msg-content');
+  if(contentEl)contentEl.innerHTML=renderMd(m.content||'');
   el.scrollTop=el.scrollHeight;
 }
 
-function closeRpChat(){
-  document.getElementById('rpChatView').classList.remove('open');
-  document.querySelector('#page-rp > .topbar').style.display='';
-  document.querySelector('#page-rp > .rp-list').style.display='';
-  document.querySelector('#page-rp > .char-add-bar').style.display='';
-  document.querySelector('.bottom-tabs').style.display='';
-  activeRpConvId=null;
-  rpMsgs=[];renderRpList();
+async function rpRunGeneration(i,conv){
+  var channel=getChannel(conv.channelId);
+  var aiMsg=rpMsgs[i];
+  if(!channel||!channel.url||!channel.key){
+    aiMsg.content='❌ 渠道配置缺失，请到对话设置里选择渠道和模型';
+    await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);return;
+  }
+  if(!conv.model){
+    aiMsg.content='❌ 未选择模型，请到对话设置里填写模型名';
+    await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);return;
+  }
+  streaming=true;
+  var rpSendBtn=document.getElementById('rpBtnSend');
+  rpSendBtn.textContent='■';rpSendBtn.classList.add('stop');
+  var t0=Date.now();var usage=null;
+  var payload=await buildRpPayload(conv,i);
+  var baseContent=aiMsg.content||'',baseReasoning=aiMsg.reasoning||'';
+  var maxAttempts=2;
+  var attempt=0,lastErr=null,aborted=false;
+  var useStream=conv.stream!==false;
+  while(attempt<maxAttempts){
+    attempt++;
+    aiMsg.content=baseContent;aiMsg.reasoning=baseReasoning;
+    lastErr=null;aborter=new AbortController();
+    try{
+      var bodyObj={
+        model:conv.model,messages:payload,
+        temperature:conv.temp||0.8,top_p:conv.topP||0.95,
+        stream:useStream
+      };
+      if(useStream)bodyObj.stream_options={include_usage:true};
+      var res=await fetch(channel.url.replace(/\/+$/,'')+'/chat/completions',{
+        method:'POST',signal:aborter.signal,
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+channel.key},
+        body:JSON.stringify(bodyObj)
+      });
+      if(!res.ok){
+        var errText=await res.text().catch(function(){return '';});
+        throw new Error('HTTP '+res.status+' '+errText.slice(0,200));
+      }
+      if(!useStream){
+        var json=await res.json();
+        if(json.usage)usage=json.usage;
+        var choice=json.choices&&json.choices[0];
+        if(choice&&choice.message){
+          aiMsg.content=choice.message.content||'';
+          aiMsg.reasoning=choice.message.reasoning_content||choice.message.reasoning||'';
+        }
+        break;
+      }
+      var reader=res.body.getReader();var decoder=new TextDecoder();var buf='';
+      while(true){
+        var chunk=await reader.read();
+        if(chunk.done)break;
+        buf+=decoder.decode(chunk.value,{stream:true});
+        var lines=buf.split('\n');buf=lines.pop();
+        for(var li=0;li<lines.length;li++){
+          var t=lines[li].trim();
+          if(!t.startsWith('data:'))continue;
+          var data=t.slice(5).trim();
+          if(data==='[DONE]')continue;
+          try{
+            var j=JSON.parse(data);
+            if(j.usage)usage=j.usage;
+            var d=j.choices&&j.choices[0]&&j.choices[0].delta;
+            if(d){
+              var rc=d.reasoning_content||d.reasoning;
+              if(rc)aiMsg.reasoning=(aiMsg.reasoning||'')+rc;
+              if(d.content)aiMsg.content+=d.content;
+              rpUpdateMsgDom(i,conv);
+            }
+          }catch(e){}
+        }
+      }
+      break;
+    }catch(e){
+      if(e.name==='AbortError'){
+        aiMsg.content+='\n[已手动停止]';aborted=true;break;
+      }
+      lastErr=e;
+      try{
+        window.__xwDebug=window.__xwDebug||[];
+        window.__xwDebug.push('['+new Date().toLocaleTimeString()+'] RP第'+attempt+'次 '+(Date.now()-t0)+'ms后断 | '+(e.name||'?')+': '+(e.message||e));
+      }catch(_){}
+      if(attempt<maxAttempts){
+        aiMsg.content=baseContent+'⚠ 连接中断，正在自动重试…';
+        rpUpdateMsgDom(i,conv);
+        await new Promise(function(r){setTimeout(r,800);});
+      }
+    }
+  }
+  if(lastErr&&!aborted){
+    var partial=aiMsg.content&&aiMsg.content!==baseContent+'⚠ 连接中断，正在自动重试…'?aiMsg.content:baseContent;
+    var errInfo='['+(lastErr.name||'Error')+'] '+(lastErr.message||lastErr);
+    aiMsg.content=(partial&&partial.trim()?partial+'\n\n':'')+'❌ 已重试'+(maxAttempts-1)+'次仍失败：'+errInfo+'\n（可点"重说"再试）';
+    toast('请求失败');
+  }
+  extractThink(aiMsg);
+  if(!aiMsg.content&&!aiMsg.reasoning)aiMsg.content='(空回复)';
+  var ms=Date.now()-t0;
+  if(usage){aiMsg.meta={inTok:usage.prompt_tokens||0,outTok:usage.completion_tokens||0,ms:ms,est:false};}
+  else{
+    var inChars=0;
+    payload.forEach(function(p){
+      if(typeof p.content==='string')inChars+=p.content.length;
+      else(p.content||[]).forEach(function(x){if(x.type==='text')inChars+=x.text.length;});
+    });
+    aiMsg.meta={inTok:Math.round(inChars/2),outTok:estTokens((aiMsg.content||'')+(aiMsg.reasoning||'')),ms:ms,est:true};
+  }
+  if(!aiMsg.reasoning)delete aiMsg.reasoning;
+  conv.lastMsg=(aiMsg.content||'').slice(0,50);
+  conv.updatedAt=Date.now();
+  await rpConvSave(conv);
+  streaming=false;aborter=null;
+  rpSendBtn.textContent='➤';rpSendBtn.classList.remove('stop');
+  await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);
 }
+
+async function rpSend(){
+  if(streaming){if(aborter)aborter.abort();return;}
+  if(!activeRpConvId)return;
+  var convs=await rpConvGetAll();
+  var conv=convs.find(function(c){return c.id===activeRpConvId;});
+  if(!conv){toast('对话不存在');return;}
+  var rpInputEl=document.getElementById('rpInput');
+  var text=rpInputEl.value.trim();
+  if(!text)return;
+  if(!conv.channelId||!conv.model){toast('请先到⚙️设置里选择渠道和模型');return;}
+  rpMsgs.push({role:'user',content:text,ts:Date.now()});
+  rpInputEl.value='';
+  await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);
+  rpMsgs.push({role:'assistant',content:'',reasoning:'',ts:Date.now()});
+  await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);
+  await rpRunGeneration(rpMsgs.length-1,conv);
+}
+
+document.getElementById('rpBtnSend').onclick=rpSend;
 
 document.getElementById('rpBack').onclick=closeRpChat;
 
@@ -1245,6 +1595,24 @@ document.getElementById('rpChatSettings').onclick=async function(){
     if(ch.id===conv.channelId)opt.selected=true;
     chSel.appendChild(opt);
   });
+  chSel.onchange=async function(){
+    var chId=this.value;
+    var ch=getChannel(chId);
+    var dl=document.getElementById('rpModelList');
+    dl.innerHTML='';
+    if(!ch||!ch.url||!ch.key)return;
+    try{
+      var res=await fetch(ch.url.replace(/\/+$/,'')+'/models',{
+        headers:{'Authorization':'Bearer '+ch.key}
+      });
+      if(!res.ok)return;
+      var j=await res.json();
+      var ids=(j.data||[]).map(function(m){return m.id;}).filter(Boolean).sort();
+      ids.forEach(function(id){
+        var opt=document.createElement('option');opt.value=id;dl.appendChild(opt);
+      });
+    }catch(e){}
+  };
   document.getElementById('rpSetModel').value=conv.model||'';
   document.getElementById('rpSetScenario').value=conv.scenario||'';
   document.getElementById('rpSetCtx').value=conv.ctx||20;
@@ -1257,6 +1625,7 @@ document.getElementById('rpChatSettings').onclick=async function(){
   document.getElementById('rpStreamOff').classList.toggle('active',conv.stream===false);
   document.getElementById('maskRpSettings').style.display='block';
   document.getElementById('rpSettingsPanel').classList.add('open');
+  if(conv.channelId)chSel.onchange();
 };
 
 document.getElementById('rpSetCtx').oninput=function(){document.getElementById('rpCtxVal').textContent=this.value;};
