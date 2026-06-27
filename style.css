@@ -495,3 +495,4 @@ details.think .tbody{
 }
 .rp-msg-time{font-size:9px;color:var(--sub);margin-top:4px;}
 .seg button.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;}
+.msg.ai .txt{white-space:pre-wrap;word-break:break-word;}
