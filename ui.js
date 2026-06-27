@@ -1191,6 +1191,19 @@ async function openRpChat(convId){
   document.getElementById('rpChatView').classList.add('open');
 }
 
+function closeRpChat(){
+  document.getElementById('rpChatView').classList.remove('open');
+  document.querySelector('#page-rp > .topbar').style.display='';
+  document.querySelector('#page-rp > .rp-list').style.display='';
+  document.querySelector('#page-rp > .char-add-bar').style.display='';
+  document.querySelector('.bottom-tabs').style.display='';
+  activeRpConvId=null;
+  rpMsgs=[];
+  renderRpList();
+}
+
+document.getElementById('rpBack').onclick=closeRpChat;
+
 function renderRpMessages(conv){
   var el=document.getElementById('rpMessages');
   el.innerHTML='';
@@ -1419,25 +1432,22 @@ async function buildRpPayload(conv,upToIndex){
 
 function rpUpdateMsgDom(i,conv){
   var el=document.getElementById('rpMessages');
-  var nodes=el.children;
-  if(!nodes[i])return;
+  var wraps=el.querySelectorAll('.msg-wrap');
+  var wrap=wraps[i];if(!wrap)return;
   var m=rpMsgs[i];
-  var node=nodes[i];
-  var body=node.querySelector('.rp-msg-ai-body');
-  if(!body)return;
-  var det=node.querySelector('details.think');
+  var det=wrap.querySelector('details.think');
   if(m.reasoning&&!det){
     det=document.createElement('details');det.className='think';det.open=true;
     det.innerHTML='<summary>💭 思考中</summary><div class="tbody"></div>';
-    body.insertBefore(det,body.querySelector('.rp-msg-content'));
-  }
+    var msgDiv=wrap.querySelector('.msg');
+    if(msgDiv)wrap.insertBefore(det,msgDiv);}
   if(det&&m.reasoning){
     det.querySelector('.tbody').textContent=m.reasoning;
-    det.querySelector('summary').textContent=m.content?'💭 思考过程 ('+m.reasoning.length+'字)':'💭 思考中…';
+    det.querySelector('summary').textContent=m.content?'💭 思考过程 ('+m.reasoning.length+'字)':'💭 思考中';
     if(m.content)det.open=false;
   }
-  var contentEl=node.querySelector('.rp-msg-content');
-  if(contentEl)contentEl.innerHTML=renderMd(m.content||'');
+  var txt=wrap.querySelector('.msg .txt');
+  if(txt)txt.innerHTML=renderMd(m.content||'');
   el.scrollTop=el.scrollHeight;
 }
 
