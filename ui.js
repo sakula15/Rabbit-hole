@@ -1388,14 +1388,14 @@ async function buildRpPayload(conv,upToIndex){
       personaContent=p.content||'';
     }
   }
-  sys+='1. 静下心来思考你作为'+charName+'是个什么样的存在？TA的人际关系网和人生轨迹是什么样的？TA会如何与人相处交流？\n';
+  sys+='1. 请静下心来代入角色思考，你作为'+charName+'是个什么样的存在？TA的人际关系网和人生轨迹是什么样的？TA会如何与人相处交流？\n';
   sys+='2. 你作为'+charName+'与'+userName+'目前是什么关系？感情需要培养，不必太过心急，你在乎的是快速推到下一个剧情点还是'+userName+'感受？\n';
   sys+='3. 与'+charName+'有关的人现在在做什么？你还记得TA们吗？TA们会怎么与'+charName+'和'+userName+'互动交流？';
   if(charDesc){
-    sys+='\n\n【'+charName+'】\n'+charDesc;
+    sys+='这是你的设定\n\n【'+charName+'】\n'+charDesc;
   }
   if(personaContent){
-    sys+='\n\n【'+userName+'】\n'+personaContent;
+    sys+='这是用户的设定\n\n【'+userName+'】\n'+personaContent;
   }
   if(conv.scenario){
     sys+='\n\n【当前情景】\n'+conv.scenario;
