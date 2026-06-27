@@ -951,7 +951,7 @@ document.getElementById('charImportFile').onchange=async function(e){
     var item={
       id:uid(),
       name:name,
-      avatar:d.avatar||'🎭',
+      avatar:'🎭',
       description:d.description||d.system||'',
       first_mes:gs[0]||'',
       alternate_greetings:gs.slice(1),
