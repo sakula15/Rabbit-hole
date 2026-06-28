@@ -1113,10 +1113,15 @@ function updateGreetingSelect(chars){
   var ch=chars.find(function(c){return c.id===charId;});
   var field=document.getElementById('rpGreetingField');
   var gSel=document.getElementById('rpSelGreeting');
-  if(ch&&ch.greetings&&ch.greetings.length){
+  var gList=[];
+  if(ch){
+    if(ch.first_mes)gList.push(ch.first_mes);
+    if(ch.alternate_greetings)gList=gList.concat(ch.alternate_greetings);
+    if(!gList.length&&ch.greetings)gList=ch.greetings;}
+  if(gList.length){
     field.style.display='';
     gSel.innerHTML='<option value="-1">(不使用开场白)</option>';
-    ch.greetings.forEach(function(g,i){
+    gList.forEach(function(g,i){
       var opt=document.createElement('option');
       opt.value=i;opt.textContent='#'+(i+1)+'：'+g.slice(0,30)+(g.length>30?'…':'');
       gSel.appendChild(opt);
@@ -1142,7 +1147,11 @@ document.getElementById('btnNewRpCreate').onclick=async function(){
   var ch=chars.find(function(c){return c.id===charId;});
   if(!ch){toast('请选择角色');return;}
   var greetIdx=parseInt(document.getElementById('rpSelGreeting').value);
-  var greeting=(ch.greetings&&greetIdx>=0)?ch.greetings[greetIdx]:null;
+  var gList=[];
+  if(ch.first_mes)gList.push(ch.first_mes);
+  if(ch.alternate_greetings)gList=gList.concat(ch.alternate_greetings);
+  if(!gList.length&&ch.greetings)gList=ch.greetings;
+  var greeting=(greetIdx>=0&&gList[greetIdx])?gList[greetIdx]:null;
   var convName=document.getElementById('rpConvName').value.trim()||ch.name+' 对话';
   var conv={
     id:uid(),
