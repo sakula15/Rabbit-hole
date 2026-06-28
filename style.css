@@ -334,12 +334,19 @@ details.think .tbody{
   background:rgba(60,40,40,.85);color:#fff;font-size:12px;
   padding:8px 18px;border-radius:18px;z-index:99;display:none;max-width:80%;text-align:center;
 }
+#rpSettingsPanel .btn-save,
+#rpSettingsPanel .btn-danger{
+  border:none;border-radius:12px;padding:12px;font-size:13px;cursor:pointer;
+  margin-top:8px;width:100%;
+}
+#rpSettingsPanel .btn-save{background:var(--accent);color:#fff;}
+#rpSettingsPanel .btn-danger{background:#f5e4e0;color:#c46a6a;}
 
 /* ══ 表情包弹窗面板 ══ */
 .sticker-popup{
-  display:none;position:absolute;bottom:100%;left:0;right:0;
-  max-height:240px;overflow-y:auto;background:var(--card);
-  border-top:1px solid var(--line);padding:8px;z-index:20;
+  display:none;position:fixed;bottom:55px;left:0;right:0;
+  max-width:560px;margin:0 auto;max-height:240px;overflow-y:auto;background:var(--card);
+  border-top:1px solid var(--line);padding:8px;z-index:300;
   -webkit-overflow-scrolling:touch;
 }
 .sticker-popup.open{display:block;}
