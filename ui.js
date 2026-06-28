@@ -1814,6 +1814,7 @@ document.getElementById('rpChatSettings').onclick=async function(){
       });
     }catch(e){}
   };
+  document.getElementById('rpSetConvName').value=conv.name||'';
   document.getElementById('rpSetModel').value=conv.model||'';
   document.getElementById('rpSetScenario').value=conv.scenario||'';
   document.getElementById('rpSetCtx').value=conv.ctx||20;
@@ -1850,6 +1851,7 @@ document.getElementById('btnRpSaveSettings').onclick=async function(){
   var convs=await rpConvGetAll();
   var conv=convs.find(function(c){return c.id===activeRpConvId;});
   if(!conv)return;
+  conv.name=document.getElementById('rpSetConvName').value.trim()||conv.name;
   conv.channelId=document.getElementById('rpSetChannel').value;
   conv.model=document.getElementById('rpSetModel').value.trim();
   conv.scenario=document.getElementById('rpSetScenario').value.trim();
@@ -1860,6 +1862,7 @@ document.getElementById('btnRpSaveSettings').onclick=async function(){
   await rpConvSave(conv);
   document.getElementById('maskRpSettings').style.display='none';
   document.getElementById('rpSettingsPanel').classList.remove('open');
+  document.getElementById('rpChatTitle').textContent=conv.name;
   toast('设置已保存');
 };
 
