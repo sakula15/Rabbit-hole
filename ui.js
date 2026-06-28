@@ -870,9 +870,8 @@ function renderStickerPopup(){
     var img=document.createElement('img');img.src=s.url;img.alt=s.name;img.title=s.name;
     cell.appendChild(img);
     cell.onclick=function(){
-      var target=rpMode?document.getElementById('rpInput'):inputEl;
-      target.value+='[表情:'+s.name+']';
-      if(!rpMode)autoGrow();
+      inputEl.value+='[表情:'+s.name+']';
+      autoGrow();
       $('stickerPopup').classList.remove('open');
       stickerOpen=false;
     };
