@@ -1361,6 +1361,7 @@ async function openRpChat(convId){
   document.querySelector('#page-rp > .rp-list').style.display='none';
   document.querySelector('#page-rp > .char-add-bar').style.display='none';
   document.querySelector('.bottom-tabs').style.display='none';
+  rpMode=true;
   document.getElementById('rpChatView').classList.add('open');
 }
 
@@ -1370,6 +1371,7 @@ function closeRpChat(){
   document.querySelector('#page-rp > .rp-list').style.display='';
   document.querySelector('#page-rp > .char-add-bar').style.display='';
   document.querySelector('.bottom-tabs').style.display='';
+  rpMode=false;
   activeRpConvId=null;
   rpMsgs=[];
   renderRpList();
@@ -1778,8 +1780,6 @@ async function rpSend(){
 }
 
 document.getElementById('rpBtnSend').onclick=rpSend;
-
-document.getElementById('rpBack').onclick=closeRpChat;
 
 /* RP设置面板 */
 document.getElementById('rpChatSettings').onclick=async function(){
