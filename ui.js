@@ -802,7 +802,8 @@ $('fileInput').onchange=async function(e){
   e.target.value='';renderAttach();
 };
 function renderAttach(){
-  var bar=$('attachBar');bar.innerHTML='';
+  var bar=rpMode?$('rpAttachBar'):$('attachBar');
+  bar.innerHTML='';
   bar.classList.toggle('has',pendingAtt.length>0);
   pendingAtt.forEach(function(a,i){
     var chip=document.createElement('div');chip.className='att-chip';
