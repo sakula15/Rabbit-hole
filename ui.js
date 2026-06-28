@@ -1397,15 +1397,16 @@ async function buildRpPayload(conv,upToIndex){
       personaContent=p.content||'';
     }
   }
+  sys+='请使用中文进行思考。\n\n';
   sys+='1. 请静下心来代入角色思考，你作为'+charName+'是个什么样的存在？TA的人际关系网和人生轨迹是什么样的？TA会如何与人相处交流？\n';
   sys+='2. 你作为'+charName+'与'+userName+'目前是什么关系？感情需要培养，不必太过心急，你在乎的是快速推到下一个剧情点还是'+userName+'感受？\n';
-  sys+='3. 与'+charName+'有关的人现在在做什么？你还记得TA们吗？TA们会怎么与'+charName+'和'+userName+'互动交流？';
-  sys+='4. 哪些是你作为'+charName+'可以知道的并自然提起的？哪些是属于'+userName+'自己你不应该知道并提及的？自然交流中认知边界非常重要，并非所有事你都必须知道';
-  if(charDesc){
-    sys+='这是你的设定\n\n【'+charName+'】\n'+charDesc;
+  sys+='3. 与'+charName+'有关的人现在在做什么？你还记得TA们吗？TA们会怎么与'+charName+'和'+userName+'互动交流？\n';
+  sys+='4. 哪些是你作为'+charName+'可以知道的并自然提起的？哪些是属于'+userName+'自己你不应该知道并提及的？自然交流中认知边界非常重要，并非所有事你都必须知道\n';
+  sys+='5. 以'+charName+'的身份自然地回应'+userName+'，用行动和对话推进，不要复述'+userName+'说过的内容';if(charDesc){
+    sys+='\n\n【关于你——'+charName+'】\n'+charDesc;
   }
   if(personaContent){
-    sys+='这是用户的设定\n\n【'+userName+'】\n'+personaContent;
+    sys+='\n\n【关于对方——'+userName+'】\n'+personaContent;
   }
   if(conv.scenario){
     sys+='\n\n【当前情景】\n'+conv.scenario;

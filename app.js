@@ -119,6 +119,7 @@ function buildPayloadUpTo(i,mem){
   var sys=c.system?c.system.trim():'';
   if(c.members.length>1){
     var names=c.members.map(function(x){return x.name||x.model;}).join('、');
+    sys=(sys?sys+'\n\n':'')+'请使用中文进行思考。';
     sys+=(sys?'\n\n':'')+'你是「'+(mem.name||mem.model)+'」，正在参与一个多人对话，成员有：'+names+'。其他成员的发言会以 [名字]: 开头标注。请以自己的身份自然参与对话，不要在回复开头加自己的名字标签。';
   }
   /* 表情包清单注入 */
