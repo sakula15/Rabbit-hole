@@ -328,7 +328,8 @@ function doSearch(q){
     div.onclick=function(){
       closeToolbar();
       setTimeout(function(){
-        var wraps=chatEl.querySelectorAll('.msg-wrap');
+        var container=rpMode?document.getElementById('rpMessages'):chatEl;
+        var wraps=container.querySelectorAll('.msg-wrap');
         var target=wraps[h.i];
         if(!target)return;
         target.scrollIntoView({behavior:'smooth',block:'center'});
@@ -464,6 +465,8 @@ document.querySelectorAll('.tabs button').forEach(function(btn){
       document.querySelectorAll('#rpSettingsPanel .tab-page').forEach(function(p){p.classList.remove('active');});
       btn.classList.add('active');
       $('rptab-'+btn.dataset.rptab).classList.add('active');
+      if(btn.dataset.rptab==='channel')renderRpChannelList();
+      if(btn.dataset.rptab==='general')updateRpStorageBox();
       return;
     }
     document.querySelectorAll('#panel .tabs button').forEach(function(b){b.classList.remove('active');});
@@ -657,6 +660,103 @@ $('btnClearChat').onclick=async function(){
   msgs=[];await saveMsgs();render();closePanel();toast('已清空');
 };
 
+/*RP面板 - 渠道tab */
+function renderRpChannelList(){
+  var box=$('rpChannelList');box.innerHTML='';
+  channels.forEach(function(ch,i){
+    var card=document.createElement('div');card.className='channel-card';
+    card.innerHTML=
+      '<div class="field"><label>渠道名称</label><input type="text" data-f="name"></div>'+
+      '<div class="field"><label>API地址</label><input type="text" data-f="url" placeholder="https://api.example.com/v1"></div>'+
+      '<div class="field"><label>API Key</label><input type="password" data-f="key"></div>'+
+      '<div class="ch-btns"><button data-a="fetch">🔄 拉取模型</button><button data-a="del" class="warn">删除渠道</button></div>'+
+      '<div class="ch-status"></div>';
+    card.querySelector('[data-f=name]').value=ch.name;
+    card.querySelector('[data-f=url]').value=ch.url;
+    card.querySelector('[data-f=key]').value=ch.key;
+    card.querySelector('.ch-status').textContent=ch.models&&ch.models.length?('已缓存 '+ch.models.length+' 个模型'):'';
+    card.querySelectorAll('[data-f]').forEach(function(inp){
+      inp.onchange=function(){ch[inp.dataset.f]=inp.value.trim();};
+    });
+    card.querySelector('[data-a=fetch]').onclick=async function(){
+      var st=card.querySelector('.ch-status');
+      ch.name=card.querySelector('[data-f=name]').value.trim();
+      ch.url=card.querySelector('[data-f=url]').value.trim();
+      ch.key=card.querySelector('[data-f=key]').value.trim();
+      if(!ch.url||!ch.key){st.textContent='❌ 先填地址和Key';return;}
+      st.textContent='拉取中…';
+      try{
+        var res=await fetch(ch.url.replace(/\/+$/,'')+'/models',{headers:{'Authorization':'Bearer '+ch.key}});
+        if(!res.ok)throw new Error('HTTP '+res.status);
+        var j=await res.json();
+        var ids=(j.data||[]).map(function(m){return m.id;}).filter(Boolean).sort();
+        if(!ids.length)throw new Error('返回列表为空');
+        ch.models=ids;await saveMeta();
+        st.textContent='✓拉取到 '+ids.length+' 个模型';
+      }catch(e){st.textContent='❌ '+(e.message||e);}
+    };
+    card.querySelector('[data-a=del]').onclick=async function(){
+      if(!confirm('删除此渠道？'))return;
+      channels.splice(i,1);await saveMeta();
+      renderRpChannelList();
+    };
+    box.appendChild(card);
+  });
+}
+
+$('btnRpNewChannel').onclick=function(){
+  channels.push({id:uid(),name:'渠道'+(channels.length+1),url:'',key:'',models:[]});
+  renderRpChannelList();
+};
+
+$('btnRpSaveChannels').onclick=async function(){
+  await saveMeta();
+  toast('渠道已保存 ✓');
+};
+
+/* RP面板 - 通用tab */
+async function updateRpStorageBox(){
+  var box=$('rpStorageBox');
+  try{
+    var est=await navigator.storage.estimate();
+    var used=(est.usage/1024/1024).toFixed(1);
+    var quota=(est.quota/1024/1024).toFixed(0);
+    var persist='';
+    if(navigator.storage.persisted)persist=(await navigator.storage.persisted())?'✓ 已持久化':'未持久化';
+    box.innerHTML='已用 '+used+' MB /配额约 '+quota+' MB<br>'+persist;
+  }catch(e){box.textContent='不支持存储查询';}
+}
+
+$('btnRpPersist').onclick=async function(){
+  try{
+    var ok=await navigator.storage.persist();
+    toast(ok?'✓ 持久化成功':'⚠ 浏览器拒绝了申请');
+  }catch(e){toast('❌ 申请出错');}
+};
+
+/* RP面板 - 清空对话 */
+$('btnRpClearChat').onclick=async function(){
+  if(!confirm('清空当前对话的所有消息？'))return;
+  rpMsgs=[];
+  await msgsSet(activeRpConvId,rpMsgs);
+  var convs=await rpConvGetAll();
+  var conv=convs.find(function(c){return c.id===activeRpConvId;});
+  if(conv)renderRpMessages(conv);
+  document.getElementById('maskRpSettings').style.display='none';
+  document.getElementById('rpSettingsPanel').classList.remove('open');
+  toast('已清空');
+};
+
+/* RP工具栏按钮 */
+document.getElementById('rpBtnToolbar2').onclick=function(){openToolbar();};
+
+/* RP表情包按钮 */
+document.getElementById('rpBtnSticker2').onclick=function(){
+  stickerOpen=!stickerOpen;
+  if(stickerOpen){renderStickerPopup();$('stickerPopup').classList.add('open');}
+  else{$('stickerPopup').classList.remove('open');}
+};
+
 /* ── 附件 ── */
 $('btnAttach').onclick=function(){$('fileInput').click();};
 $('fileInput').onchange=async function(e){
@@ -686,6 +786,28 @@ function renderAttach(){
     chip.appendChild(rm);bar.appendChild(chip);
   });
 }
+
+/* RP附件按钮 */
+document.getElementById('rpBtnAttach').onclick=function(){
+  document.getElementById('rpFileInput').click();
+};
+
+document.getElementById('rpFileInput').onchange=async function(e){
+  for(var fi=0;fi<e.target.files.length;fi++){
+    var file=e.target.files[fi];
+    if(file.type.startsWith('image/')){
+      if(file.size>4*1024*1024){toast(file.name+' 超过4MB，跳过');continue;}
+      var data=await new Promise(function(r){var fr=new FileReader();fr.onload=function(){r(fr.result);};fr.readAsDataURL(file);});
+      pendingAtt.push({type:'image',name:file.name,data:data});
+    }else{
+      if(file.size>1024*1024){toast(file.name+' 超过1MB，跳过');continue;}
+      var txt=await new Promise(function(r){var fr=new FileReader();fr.onload=function(){r(fr.result);};fr.readAsText(file);});
+      pendingAtt.push({type:'file',name:file.name,text:txt});
+    }
+  }
+  e.target.value='';
+  toast('已添加 '+pendingAtt.length+' 个附件');
+};
 
 /* ── 输入框 ── */
 function autoGrow(){inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,110)+'px';}
@@ -721,8 +843,9 @@ function renderStickerPopup(){
     var img=document.createElement('img');img.src=s.url;img.alt=s.name;img.title=s.name;
     cell.appendChild(img);
     cell.onclick=function(){
-      inputEl.value+='[表情:'+s.name+']';
-      autoGrow();
+      var target=rpMode?document.getElementById('rpInput'):inputEl;
+      target.value+='[表情:'+s.name+']';
+      if(!rpMode)autoGrow();
       $('stickerPopup').classList.remove('open');
       stickerOpen=false;
     };
@@ -1610,7 +1733,12 @@ async function rpSend(){
   var text=rpInputEl.value.trim();
   if(!text)return;
   if(!conv.channelId||!conv.model){toast('请先到⚙️设置里选择渠道和模型');return;}
-  rpMsgs.push({role:'user',content:text,ts:Date.now()});
+  var userMsg={role:'user',content:text,images:[],files:[],ts:Date.now()};pendingAtt.forEach(function(a){
+    if(a.type==='image')userMsg.images.push(a.data);
+    else userMsg.files.push({name:a.name,text:a.text});
+  });
+  pendingAtt=[];
+  rpMsgs.push(userMsg);
   rpInputEl.value='';
   await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);
   rpMsgs.push({role:'assistant',content:'',reasoning:'',ts:Date.now()});
