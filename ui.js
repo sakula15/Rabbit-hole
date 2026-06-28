@@ -833,7 +833,7 @@ document.getElementById('rpFileInput').onchange=async function(e){
     }
   }
   e.target.value='';
-  toast('已添加 '+pendingAtt.length+' 个附件');
+  renderAttach();
 };
 
 /* ── 输入框 ── */
