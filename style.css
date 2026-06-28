@@ -1,3 +1,4 @@
+*{font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif !important;}
 :root{
   --bg:#faf7f4; --card:#ffffff; --line:#eee4dc;
   --me:#ffd9e8; --me-text:#6b3a52;
