@@ -1288,7 +1288,6 @@ function renderRpMessages(conv){
       };
     })(i);
     act.appendChild(be);
-    }
     if(m.role==='assistant'){
       var br=document.createElement('button');br.textContent='🔄 重说';
       (function(idx){
