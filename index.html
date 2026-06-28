@@ -25,10 +25,10 @@
 
 <div class="chat" id="chat"></div>
 
-<div class="member-bar" id="memberBar"></div>
-<div class="attach-bar" id="attachBar"></div>
-
 <div class="inputbar">
+  <div class="sticker-popup" id="stickerPopup">
+    <div class="sticker-grid" id="stickerGrid"></div>
+  </div>
   <button class="attach-btn" id="btnAttach">📎</button>
   <button class="attach-btn" id="btnSticker">😺</button>
   <input type="file" id="fileInput" multiple accept="*/*" style="display:none">
@@ -111,10 +111,11 @@
     <div class="chat rp-messages" id="rpMessages"></div>
     <div class="attach-bar" id="rpAttachBar"></div>
     <div class="inputbar">
-      <button class="attach-btn" id="rpBtnAttach">📎</button>
-      <button class="attach-btn" id="rpBtnSticker">😺</button>
-      <input type="file" id="rpFileInput" multiple accept="*/*" style="display:none">
-      <textarea id="rpInput" rows="1" placeholder="说点什么…"></textarea>
+      <div class="sticker-popup" id="rpStickerPopup">
+        <div class="sticker-grid" id="rpStickerGrid"></div>
+      </div>
+      <button class="attach-btn" id="rpBtnAttach">📎</button><button class="attach-btn" id="rpBtnSticker">😺</button>
+      <input type="file" id="rpFileInput" multiple accept="*/*" style="display:none"><textarea id="rpInput" rows="1" placeholder="说点什么…"></textarea>
       <button class="send-btn" id="rpBtnSend">➤</button>
     </div>
   </div>
@@ -386,10 +387,6 @@
   <button class="active" data-page="chat"><span class="tab-icon">🏠</span>讨论室</button>
   <button data-page="persona"><span class="tab-icon">👤</span>人设</button>
   <button data-page="settings"><span class="tab-icon">⚙️</span>设置</button>
-</div>
-
-<div class="sticker-popup" id="stickerPopup">
-  <div class="sticker-grid" id="stickerGrid"></div>
 </div>
 
 <div class="toast" id="toast"></div>
