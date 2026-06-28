@@ -1146,6 +1146,11 @@ document.getElementById('btnNewRpCreate').onclick=async function(){
   var chars=await charGetAll();
   var ch=chars.find(function(c){return c.id===charId;});
   if(!ch){toast('请选择角色');return;}
+  var p=null;
+  if(personaId){
+    var personas=await personaGetAll();
+    p=personas.find(function(x){return x.id===personaId;});
+  }
   var greetIdx=parseInt(document.getElementById('rpSelGreeting').value);
   var gList=[];
   if(ch.first_mes)gList.push(ch.first_mes);
@@ -1160,6 +1165,8 @@ document.getElementById('btnNewRpCreate').onclick=async function(){
     name:convName,
     charName:ch.name,
     charAvatar:ch.avatar||'🎭',
+    userName:p?p.name:'用户',
+    userAvatar:p?(p.avatar||'👤'):'👤',
     scenario:'',
     channelId:'',
     model:'',
@@ -1247,6 +1254,11 @@ function renderRpMessages(conv){
     }else{
       var row=document.createElement('div');
       row.className='msg user';
+      var uTag=document.createElement('div');
+      uTag.className='model-tag';
+      uTag.style.textAlign='right';
+      uTag.textContent=(conv.userAvatar||'👤')+' '+(conv.userName||'用户');
+      wrap.appendChild(uTag);
       var b=document.createElement('div');b.className='bubble';
       if(m.images&&m.images.length){
         m.images.forEach(function(src){
@@ -1268,15 +1280,14 @@ function renderRpMessages(conv){
       else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('已复制 ✓');}
     };
     act.appendChild(bc);
-    if(m.role==='user'){
-      var be=document.createElement('button');be.textContent='✏️ 编辑';
-      (function(idx){
-        be.onclick=function(){
-          if(streaming)return;
-          rpStartEdit(idx,conv);
-        };
-      })(i);
-      act.appendChild(be);
+    var be=document.createElement('button');be.textContent='✏️ 编辑';
+    (function(idx){
+      be.onclick=function(){
+        if(streaming)return;
+        rpStartEdit(idx,conv);
+      };
+    })(i);
+    act.appendChild(be);
     }
     if(m.role==='assistant'){
       var br=document.createElement('button');br.textContent='🔄 重说';
@@ -1363,9 +1374,10 @@ function rpStartEdit(idx,conv){
     toast('已保存 ✓');
   };
   btns.appendChild(cancel);btns.appendChild(save);
-  var resend=document.createElement('button');resend.className='edit-save';
-  resend.textContent='保存并重新生成';
-  resend.onclick=async function(){
+  if(rpMsgs[idx].role==='user'){
+    var resend=document.createElement('button');resend.className='edit-save';
+    resend.textContent='保存并重新生成';
+    resend.onclick=async function(){
     if(streaming)return;
     rpMsgs[idx].content=ta.value;rpMsgs[idx].ts=Date.now();
     rpMsgs.splice(idx+1);
@@ -1374,7 +1386,8 @@ function rpStartEdit(idx,conv){
     renderRpMessages(conv);
     await rpRunGeneration(rpMsgs.length-1,conv);
   };
-  btns.appendChild(resend);
+    btns.appendChild(resend);
+  }
   box.appendChild(ta);box.appendChild(btns);wrap.appendChild(box);
   setTimeout(function(){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);},50);
 }
