@@ -458,8 +458,16 @@ $('impFile').onchange=async function(e){
 /* ── 设置面板 ── */
 document.querySelectorAll('.tabs button').forEach(function(btn){
   btn.onclick=function(){
-    document.querySelectorAll('.tabs button').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('.tab-page').forEach(function(p){p.classList.remove('active');});
+    if(!btn.dataset.tab&&!btn.dataset.rptab)return;
+    if(btn.dataset.rptab){
+      document.querySelectorAll('#rpSettingsPanel .tabs button').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('#rpSettingsPanel .tab-page').forEach(function(p){p.classList.remove('active');});
+      btn.classList.add('active');
+      $('rptab-'+btn.dataset.rptab).classList.add('active');
+      return;
+    }
+    document.querySelectorAll('#panel .tabs button').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('#panel .tab-page').forEach(function(p){p.classList.remove('active');});
     btn.classList.add('active');
     $('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='general')updateStorageBox();
