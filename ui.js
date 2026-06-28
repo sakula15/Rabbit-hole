@@ -748,10 +748,10 @@ $('btnRpClearChat').onclick=async function(){
 };
 
 /* RP工具栏按钮 */
-document.getElementById('rpBtnToolbar2').onclick=function(){openToolbar();};
+document.getElementById('rpBtnToolbar').onclick=function(){openToolbar();};
 
 /* RP表情包按钮 */
-document.getElementById('rpBtnSticker2').onclick=function(){
+document.getElementById('rpBtnSticker').onclick=function(){
   stickerOpen=!stickerOpen;
   if(stickerOpen){renderStickerPopup();$('stickerPopup').classList.add('open');}
   else{$('stickerPopup').classList.remove('open');}
