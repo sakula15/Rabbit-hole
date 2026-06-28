@@ -753,8 +753,35 @@ document.getElementById('rpBtnToolbar').onclick=function(){openToolbar();};
 /* RP表情包按钮 */
 document.getElementById('rpBtnSticker').onclick=function(){
   stickerOpen=!stickerOpen;
-  if(stickerOpen){renderStickerPopup();$('stickerPopup').classList.add('open');}
-  else{$('stickerPopup').classList.remove('open');}
+  var popup=$('rpStickerPopup');
+  var grid=$('rpStickerGrid');
+  if(stickerOpen){
+    grid.innerHTML='';
+    if(!stickers.length){
+      grid.innerHTML='<div class="stk-empty">还没有表情包 😺</div>';
+    }else{
+      var lastCat='';
+      stickers.forEach(function(s){
+        if(s.cat!==lastCat){
+          lastCat=s.cat;
+          var label=document.createElement('div');
+          label.style.cssText='grid-column:1/-1;font-size:11px;color:#b89a8c;padding:4px 02px;';
+          label.textContent=s.cat;
+          grid.appendChild(label);
+        }var cell=document.createElement('div');cell.className='stk-item';
+        var img=document.createElement('img');img.src=s.url;img.alt=s.name;img.title=s.name;
+        cell.appendChild(img);
+        cell.onclick=function(){
+          document.getElementById('rpInput').value+='[表情:'+s.name+']';
+          popup.classList.remove('open');
+          stickerOpen=false;
+        };
+        grid.appendChild(cell);
+      });
+    }popup.classList.add('open');
+  }else{
+    popup.classList.remove('open');
+  }
 };
 
 /* ── 附件 ── */
@@ -1472,6 +1499,11 @@ function renderRpMessages(conv){
     el.appendChild(wrap);
   });el.scrollTop=el.scrollHeight;
 }
+
+document.getElementById('rpInput').oninput=function(){
+  this.style.height='auto';
+  this.style.height=Math.min(this.scrollHeight,110)+'px';
+};
 
 function rpStartEdit(idx,conv){
   var el=document.getElementById('rpMessages');
