@@ -407,7 +407,7 @@ $('expFull').onclick=async function(){
 var impMode=null;
 $('impJsonl').onclick=function(){impMode='jsonl';$('impFile').accept='.jsonl';$('impFile').click();};
 $('impFull').onclick=function(){impMode='full';$('impFile').accept='.json';$('impFile').click();};
-$('impTavo').onclick=function(){impMode='tavo';$('impFile').accept='.jsonl';$('impFile').click();};
+$('impTavoRp').onclick=function(){impMode='tavo';$('impFile').accept='.jsonl';$('impFile').click();};
 $('impFile').onchange=async function(e){
   var file=e.target.files[0];if(!file)return;
   e.target.value='';
