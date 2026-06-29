@@ -252,6 +252,8 @@ async function switchConv(id){
   document.getElementById('input').value='';
   await kvSet('activeId',id);
   closeDrawer();render();renderMemberBar();updateTitle();
+  $('searchInput').value='';
+  $('searchResults').innerHTML='<div class="tb-empty">输入关键词开始搜索</div>';
 }
 $('btnNewConv').onclick=async function(){
   var c={id:uid(),name:'对话'+(convs.length+1),system:'',ctx:20,temp:0.8,mode:'round',
@@ -1465,12 +1467,18 @@ async function openRpChat(convId){
   rpMsgs=await msgsGet(convId);
   document.getElementById('rpInput').style.height='';
   renderRpMessages(conv);
+  $('searchInput').value='';
+  $('searchResults').innerHTML='<div class="tb-empty">输入关键词开始搜索</div>';
   document.querySelector('#page-rp > .topbar').style.display='none';
   document.querySelector('#page-rp > .rp-list').style.display='none';
   document.querySelector('#page-rp > .char-add-bar').style.display='none';
   document.querySelector('.bottom-tabs').style.display='none';
   rpMode=true;
   document.getElementById('rpChatView').classList.add('open');
+  setTimeout(function(){
+    var el=document.getElementById('rpMessages');
+    el.scrollTop=el.scrollHeight;
+  },100);
 }
 
 function closeRpChat(){
@@ -1750,7 +1758,7 @@ async function rpRunGeneration(i,conv){
   var channel=getChannel(conv.channelId);
   var aiMsg=rpMsgs[i];
   if(!channel||!channel.url||!channel.key){
-    aiMsg.content='❌ 渠道配置缺失，请到对话设置里选择渠道和模型';
+    aiMsg.content='❌ 渠道配置缺失| channelId='+conv.channelId+' | 已有渠道='+channels.map(function(c){return c.id;}).join(',');
     await msgsSet(conv.id,rpMsgs);renderRpMessages(conv);return;
   }
   if(!conv.model){
