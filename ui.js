@@ -1336,6 +1336,31 @@ async function renderRpList(){
     el.appendChild(group);
     delete groups[ch.id];
   });
+  Object.keys(groups).forEach(function(gid){
+    var list=groups[gid];
+    var group=document.createElement('div');
+    group.className='rp-group open';
+    var header=document.createElement('div');
+    header.className='rp-group-header';
+    header.innerHTML='<span class="rp-group-arrow">▶</span>'+'<span>📂</span>'
+      +'<span>未绑定角色</span>'
+      +'<span style="font-size:11px;color:var(--sub);font-weight:400;">'+list.length+'个对话</span>';
+    header.onclick=function(){group.classList.toggle('open');};
+    var body=document.createElement('div');
+    body.className='rp-group-body';
+    list.forEach(function(c){
+      var card=document.createElement('div');
+      card.className='rp-conv-card';
+      card.innerHTML='<div class="rp-conv-info"><h4>'+(c.name||'未命名对话')+'</h4>'
+        +'<p>'+(c.lastMsg||'还没有消息')+'</p></div>'
+        +'<span class="rp-conv-time">'+(c.updatedAt?fmtTime(c.updatedAt):'')+'</span>';
+      card.onclick=function(){openRpChat(c.id);};
+      body.appendChild(card);
+    });
+    group.appendChild(header);
+    group.appendChild(body);
+    el.appendChild(group);
+  });
 }
 
 document.getElementById('btnNewRp').onclick=async function(){
