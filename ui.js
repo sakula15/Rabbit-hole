@@ -405,6 +405,7 @@ $('expFull').onclick=async function(){
   toast('完整备份已导出 ✓');
 };
 var impMode=null;
+var pendingTavoMsgs=null;
 $('impJsonl').onclick=function(){impMode='jsonl';$('impFile').accept='.jsonl';$('impFile').click();};
 $('impFull').onclick=function(){impMode='full';$('impFile').accept='.json';$('impFile').click();};
 $('impFile').onchange=async function(e){
@@ -518,31 +519,10 @@ $('impFile').onchange=async function(e){
         }catch(e){}
       }
       if(!imported.length){toast('没有找到有效消息');return;}
-      if(!confirm('检测到 '+imported.length+' 条消息\n角色：'+charName+'\n用户：'+userName+'\n导入为RP对话？'))return;
-      var now=Date.now();
-      var newConv={
-        id:uid(),
-        name:charName+' & '+userName,
-        charId:'',
-        personaId:'',
-        channelId:'',
-        model:'',
-        system:'',
-        scenario:'',
-        ctx:20,
-        temp:0.8,
-        topP:0.95,
-        stream:true,
-        userName:userName,
-        userAvatar:'👤',
-        charAvatar:'',
-        updatedAt:now
-      };
-      await rpConvSave(newConv);
-      await msgsSet(newConv.id,imported);
-      await renderRpList();
+      pendingTavoMsgs=imported;
       closeToolbar();
-      toast('已导入 '+imported.length+' 条消息到RP对话「'+newConv.name+'」 ✓');
+      document.getElementById('btnNewRp').click();
+      toast('已解析 '+imported.length+' 条消息，请选择角色和人设');
     }
   }catch(err){
     toast('导入失败：'+(err.message||err));
@@ -1458,7 +1438,12 @@ document.getElementById('btnNewRpCreate').onclick=async function(){
     updatedAt:Date.now()
   };
   await rpConvSave(conv);
-  if(greeting){
+  if(pendingTavoMsgs){
+    await msgsSet(conv.id,pendingTavoMsgs);
+    conv.lastMsg=pendingTavoMsgs[pendingTavoMsgs.length-1].content.slice(0,50);
+    await rpConvSave(conv);
+    pendingTavoMsgs=null;
+  }else if(greeting){
     await msgsSet(conv.id,[{role:'assistant',content:greeting,ts:Date.now()}]);
   }
   closeNewRpPanel();
