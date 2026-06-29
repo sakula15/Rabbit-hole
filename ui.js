@@ -377,16 +377,28 @@ $('expJsonl').onclick=function(){
   toast('已导出 JSONL ✓');
 };
 $('expFull').onclick=async function(){
+  var chars=await charGetAll();
+  var personas=await personaGetAll();
+  var rpConvsList=await rpConvGetAll();
   var backup={
-    version:1,
+    version:2,
     exportedAt:new Date().toISOString(),
     channels:channels,
-    convs:[]
+    convs:[],
+    characters:chars,
+    personas:personas,
+    rpConvs:[],
+    stickers:stickers
   };
   for(var i=0;i<convs.length;i++){
     var c=convs[i];
     var m=await msgsGet(c.id);
     backup.convs.push({meta:c,messages:m});
+  }
+  for(var j=0;j<rpConvsList.length;j++){
+    var rc=rpConvsList[j];
+    var rm=await msgsGet(rc.id);
+    backup.rpConvs.push({meta:rc,messages:rm});
   }
   var fname='RabbitHole_backup_'+new Date().toISOString().slice(0,10)+'.json';
   downloadFile(fname,JSON.stringify(backup,null,2),'application/json');
@@ -395,6 +407,7 @@ $('expFull').onclick=async function(){
 var impMode=null;
 $('impJsonl').onclick=function(){impMode='jsonl';$('impFile').accept='.jsonl';$('impFile').click();};
 $('impFull').onclick=function(){impMode='full';$('impFile').accept='.json';$('impFile').click();};
+$('impTavo').onclick=function(){impMode='tavo';$('impFile').accept='.jsonl';$('impFile').click();};
 $('impFile').onchange=async function(e){
   var file=e.target.files[0];if(!file)return;
   e.target.value='';
@@ -435,7 +448,12 @@ $('impFile').onchange=async function(e){
     }else if(impMode==='full'){
       var backup=JSON.parse(text);
       if(!backup.version||!backup.convs){toast('不是有效的备份文件');return;}
-      if(!confirm('恢复备份将覆盖当前所有数据！\n包含 '+backup.convs.length+' 个对话、'+(backup.channels||[]).length+' 个渠道\n确定继续？'))return;
+      var info='包含 '+backup.convs.length+' 个讨论室对话、'+(backup.channels||[]).length+' 个渠道';
+      if(backup.rpConvs)info+='\n'+backup.rpConvs.length+' 个RP对话';
+      if(backup.characters)info+='\n'+backup.characters.length+' 个角色';
+      if(backup.personas)info+='\n'+backup.personas.length+' 个人设';
+      if(backup.stickers)info+='\n'+backup.stickers.length+' 个表情包';
+      if(!confirm('恢复备份将覆盖当前所有数据！\n'+info+'\n确定继续？'))return;
       channels=backup.channels||[];
       convs=[];
       for(var i=0;i<backup.convs.length;i++){
@@ -443,13 +461,89 @@ $('impFile').onchange=async function(e){
         convs.push(item.meta);
         await msgsSet(item.meta.id,item.messages||[]);
       }
+      if(backup.characters){
+        for(var ci=0;ci<backup.characters.length;ci++){
+          await charSave(backup.characters[ci]);
+        }
+      }
+      if(backup.personas){
+        for(var pi=0;pi<backup.personas.length;pi++){
+          await personaSave(backup.personas[pi]);
+        }
+      }
+      if(backup.rpConvs){
+        for(var ri=0;ri<backup.rpConvs.length;ri++){
+          var rp=backup.rpConvs[ri];
+          await rpConvSave(rp.meta);
+          await msgsSet(rp.meta.id,rp.messages||[]);
+        }
+      }
+      if(backup.stickers){
+        stickers=backup.stickers;
+        for(var si=0;si<stickers.length;si++){
+          await stkSave(stickers[si]);
+        }
+      }
       if(!convs.length)convs.push({id:uid(),name:'对话1',system:'',ctx:20,temp:0.8,mode:'round',members:[],updatedAt:Date.now()});
       activeId=convs[0].id;
       msgs=await msgsGet(activeId);
       await saveMeta();
       render();renderMemberBar();updateTitle();
+      await renderCharList();
+      await renderPersonaList();
+      await renderRpList();
       closeToolbar();
-      toast('备份恢复成功 ✓ （'+backup.convs.length+' 个对话）');
+      toast('备份恢复成功 ✓');
+    }else if(impMode==='tavo'){
+      var lines=text.trim().split('\n').filter(Boolean);
+      if(lines.length<2){toast('文件内容不足');return;}
+      var header={};
+      try{header=JSON.parse(lines[0]);}catch(e){}
+      var charName=header.character_name||'角色';
+      var userName=header.user_name||'用户';
+      var imported=[];
+      for(var li=1;li<lines.length;li++){
+        try{
+          var m=JSON.parse(lines[li]);
+          if(m.is_system)continue;
+          var msg={
+            role:m.is_user?'user':'assistant',
+            content:m.mes||'',
+            name:m.name||'',
+            ts:m.send_date?new Date(m.send_date).getTime():Date.now()
+          };
+          if(m.extra&&m.extra.reasoning){
+            msg.reasoning=m.extra.reasoning;
+          }
+          if(msg.content)imported.push(msg);
+        }catch(e){}
+      }
+      if(!imported.length){toast('没有找到有效消息');return;}
+      if(!confirm('检测到 '+imported.length+' 条消息\n角色：'+charName+'\n用户：'+userName+'\n导入为RP对话？'))return;
+      var now=Date.now();
+      var newConv={
+        id:uid(),
+        name:charName+' & '+userName,
+        charId:'',
+        personaId:'',
+        channelId:'',
+        model:'',
+        system:'',
+        scenario:'',
+        ctx:20,
+        temp:0.8,
+        topP:0.95,
+        stream:true,
+        userName:userName,
+        userAvatar:'👤',
+        charAvatar:'',
+        updatedAt:now
+      };
+      await rpConvSave(newConv);
+      await msgsSet(newConv.id,imported);
+      await renderRpList();
+      closeToolbar();
+      toast('已导入 '+imported.length+' 条消息到RP对话「'+newConv.name+'」 ✓');
     }
   }catch(err){
     toast('导入失败：'+(err.message||err));
@@ -1356,7 +1450,7 @@ async function openRpChat(convId){
   if(!conv){toast('对话不存在');return;}
   document.getElementById('rpChatTitle').textContent=conv.name||'对话';
   rpMsgs=await msgsGet(convId);
-  document.getElementById('rpInput').style.height='auto';
+  rpInputEl.style.height='';
   renderRpMessages(conv);
   document.querySelector('#page-rp > .topbar').style.display='none';
   document.querySelector('#page-rp > .rp-list').style.display='none';
