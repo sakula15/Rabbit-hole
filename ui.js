@@ -1356,7 +1356,7 @@ async function openRpChat(convId){
   if(!conv){toast('对话不存在');return;}
   document.getElementById('rpChatTitle').textContent=conv.name||'对话';
   rpMsgs=await msgsGet(convId);
-  document.getElementById('rpInput').value='';
+  document.getElementById('rpInput').style.height='auto';
   renderRpMessages(conv);
   document.querySelector('#page-rp > .topbar').style.display='none';
   document.querySelector('#page-rp > .rp-list').style.display='none';
