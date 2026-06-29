@@ -305,7 +305,8 @@ function doSearch(q){
   var box=$('searchResults');
   var lower=q.toLowerCase();
   var hits=[];
-  msgs.forEach(function(m,i){
+  var source=rpMode?rpMsgs:msgs;
+  source.forEach(function(m,i){
     if(!m.content)return;
     var idx=m.content.toLowerCase().indexOf(lower);
     if(idx===-1)return;
