@@ -1296,6 +1296,15 @@ async function renderRpList(){
   chars.forEach(function(ch){
     if(!groups[ch.id])return;
     var group=document.createElement('div');
+    group.className='rp-group open';
+    var header=document.createElement('div');
+    header.className='rp-group-header';
+    header.innerHTML='<span class="rp-group-arrow">▶</span>'+'<span>'+(ch.avatar||'🎭')+'</span>'
+      +'<span>'+ch.name+'</span>'
+      +'<span style="font-size:11px;color:var(--sub);font-weight:400;">'+groups[ch.id].length+'个对话</span>';
+    header.onclick=function(){group.classList.toggle('open');};
+    var body=document.createElement('div');
+    body.className='rp-group-body';
     groups[ch.id].forEach(function(c){
       var card=document.createElement('div');
       card.className='rp-conv-card';
