@@ -1296,21 +1296,23 @@ async function renderRpList(){
   chars.forEach(function(ch){
     if(!groups[ch.id])return;
     var group=document.createElement('div');
-    group.className='rp-group open';
-    var header=document.createElement('div');
-    header.className='rp-group-header';
-    header.innerHTML='<span class="rp-group-arrow">▶</span>'+'<span>'+(ch.avatar||'🎭')+'</span>'
-      +'<span>'+ch.name+'</span>'
-      +'<span style="font-size:11px;color:var(--sub);font-weight:400;">'+groups[ch.id].length+'个对话</span>';
-    header.onclick=function(){group.classList.toggle('open');};
-    var body=document.createElement('div');
-    body.className='rp-group-body';
     groups[ch.id].forEach(function(c){
       var card=document.createElement('div');
       card.className='rp-conv-card';
       card.innerHTML='<div class="rp-conv-info"><h4>'+(c.name||'未命名对话')+'</h4>'
         +'<p>'+(c.lastMsg||'还没有消息')+'</p></div>'
         +'<span class="rp-conv-time">'+(c.updatedAt?fmtTime(c.updatedAt):'')+'</span>';
+      var del=document.createElement('button');
+      del.className='cdel';del.textContent='🗑';
+      del.onclick=async function(e){
+        e.stopPropagation();
+        if(!confirm('删除对话「'+(c.name||'未命名')+'」及其全部消息？'))return;
+        await rpConvDel(c.id);
+        await msgsDel(c.id);
+        await renderRpList();
+        toast('对话已删除');
+      };
+      card.appendChild(del);
       card.onclick=function(){openRpChat(c.id);};
       body.appendChild(card);
     });
@@ -1337,6 +1339,17 @@ async function renderRpList(){
       card.innerHTML='<div class="rp-conv-info"><h4>'+(c.name||'未命名对话')+'</h4>'
         +'<p>'+(c.lastMsg||'还没有消息')+'</p></div>'
         +'<span class="rp-conv-time">'+(c.updatedAt?fmtTime(c.updatedAt):'')+'</span>';
+      var del=document.createElement('button');
+      del.className='cdel';del.textContent='🗑';
+      del.onclick=async function(e){
+        e.stopPropagation();
+        if(!confirm('删除对话「'+(c.name||'未命名')+'」及其全部消息？'))return;
+        await rpConvDel(c.id);
+        await msgsDel(c.id);
+        await renderRpList();
+        toast('对话已删除');
+      };
+      card.appendChild(del);
       card.onclick=function(){openRpChat(c.id);};
       body.appendChild(card);
     });
