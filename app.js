@@ -59,6 +59,7 @@ var activeId=null;
 var msgs=[];
 var pendingAtt=[];
 var streaming=false, aborter=null, stopChain=false;
+var rpMode = false;
 var editIdx=null;
 var draftMembers=null;
 
