@@ -483,9 +483,6 @@ details.think .tbody{
 }
 .rp-group-add:active{opacity:.7;}
 #maskRpSettings{z-index:100;}
-#page-rp{
-  display:flex;flex-direction:column;height:100vh;overflow:hidden;
-}
 
 /*══ RP聊天窗口 ══ */
 .rp-chat-view{
