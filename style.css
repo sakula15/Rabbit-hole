@@ -455,10 +455,7 @@ details.think .tbody{
 .greeting-item .greeting-del{flex-shrink:0;border:none;background:none;color:#c46a6a;font-size:16px;cursor:pointer;padding:8px;min-width:32px;min-height:32px;}
 
 /*══ 角色聊天折叠列表 ══ */
-#page-rp {
-  height: 0;
-}
-.rp-list{flex:1;overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:6px;min-height:0;}
+.rp-list{overflow-y:scroll;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:6px;height:calc(100vh - 160px);}
 .rp-group{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);}
 .rp-group-header{
   display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
