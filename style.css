@@ -483,6 +483,10 @@ details.think .tbody{
 }
 .rp-group-add:active{opacity:.7;}
 #maskRpSettings{z-index:100;}
+#convList {
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
 
 /*══ RP聊天窗口 ══ */
 .rp-chat-view{
